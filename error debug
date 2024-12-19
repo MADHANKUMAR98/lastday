@@ -1,0 +1,292 @@
+import { Component } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule } from '@angular/forms';
+
+@Component({
+  standalone: true,
+  selector: 'app-bill-generation',
+  templateUrl: './bill-generation.component.html',
+  styleUrls: ['./bill-generation.component.css'],
+  imports: [CommonModule, ReactiveFormsModule], // Import CommonModule here
+})
+export class BillGenerationComponent {
+  billForm: FormGroup;
+
+  constructor(private fb: FormBuilder) {
+    this.billForm = this.fb.group({
+      customerId: ['', [Validators.required]],
+      billDate: ['', [Validators.required]],
+      dueDate: ['', [Validators.required]],
+      noOfUnits: ['', [Validators.required, Validators.pattern(/^\d+$/)]],
+      billAmount: ['', [Validators.required, Validators.pattern(/^\d+(\.\d{1,2})?$/)]],
+    });
+  }
+
+  onSubmit() {
+    if (this.billForm.valid) {
+      console.log('Bill Generated:', this.billForm.value);
+    } else {
+      console.error('Form is invalid');
+    }
+  }
+}
+
+
+
+<form [formGroup]="billForm" (ngSubmit)="onSubmit()" class="form-container">
+  <div class="form-group">
+    <label for="customerId">Customer ID</label>
+    <input
+      type="text"
+      id="customerId"
+      formControlName="customerId"
+      class="form-control"
+      [ngClass]="{ 'is-invalid': billForm.get('customerId')?.invalid && billForm.get('customerId')?.touched }"
+    />
+    <div *ngIf="billForm.get('customerId')?.invalid && billForm.get('customerId')?.touched" class="invalid-feedback">
+      Customer ID is required.
+    </div>
+  </div>
+
+  <!-- Add other fields similarly -->
+
+  <button type="submit" class="btn btn-primary" [disabled]="billForm.invalid">Generate Bill</button>
+</form>
+
+
+
+
+
+
+
+Here’s a complete Angular 19 codebase for the **Bill Generation Page** with dynamic customer ID fetching through an API and a grid to display existing bills.
+
+---
+
+### Backend API Endpoints to Support Frontend
+Before diving into the frontend, ensure these APIs exist in your Spring Boot backend:
+
+- **API to fetch bills by customer ID**: `GET /api/bills/{customerId}`
+- **API to generate a bill**: `POST /api/bills`
+
+---
+
+### Frontend Code (Angular 19)
+
+#### File Structure
+```plaintext
+src/app/
+  ├── bill-generation/
+  │   ├── bill-generation.component.ts
+  │   ├── bill-generation.component.html
+  │   ├── bill-generation.component.css
+  ├── services/
+  │   ├── bill.service.ts
+```
+
+---
+
+#### **`bill-generation.component.ts`**
+Handles the logic for bill generation and fetching bills for a customer.
+
+```typescript
+import { Component, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { BillService } from '../services/bill.service';
+
+@Component({
+  standalone: true,
+  selector: 'app-bill-generation',
+  templateUrl: './bill-generation.component.html',
+  styleUrls: ['./bill-generation.component.css'],
+  imports: [],
+})
+export class BillGenerationComponent implements OnInit {
+  billForm: FormGroup;
+  bills: any[] = []; // Holds fetched bills for the grid
+  customerId: string = ''; // Dynamic customer ID
+
+  constructor(private fb: FormBuilder, private billService: BillService) {
+    this.billForm = this.fb.group({
+      billDate: ['', [Validators.required]],
+      dueDate: ['', [Validators.required]],
+      noOfUnits: ['', [Validators.required, Validators.pattern(/^\d+$/)]],
+      billAmount: ['', [Validators.required, Validators.pattern(/^\d+(\.\d{1,2})?$/)]],
+    });
+  }
+
+  ngOnInit(): void {}
+
+  fetchBills(): void {
+    if (this.customerId.trim()) {
+      this.billService.getBillsByCustomerId(this.customerId).subscribe(
+        (data) => {
+          this.bills = data;
+        },
+        (error) => {
+          console.error('Error fetching bills:', error);
+          this.bills = [];
+        }
+      );
+    }
+  }
+
+  generateBill(): void {
+    if (this.billForm.valid) {
+      const billData = { ...this.billForm.value, customerId: this.customerId };
+      this.billService.createBill(billData).subscribe(
+        (response) => {
+          alert('Bill generated successfully!');
+          this.fetchBills(); // Refresh the grid
+        },
+        (error) => {
+          console.error('Error generating bill:', error);
+          alert('Failed to generate the bill. Please try again.');
+        }
+      );
+    }
+  }
+}
+```
+
+---
+
+#### **`bill-generation.component.html`**
+The user interface for bill generation and displaying bills.
+
+```html
+<div class="container">
+  <!-- Input Section -->
+  <div class="input-section">
+    <h3>Generate Bill</h3>
+    <div class="form-group">
+      <label for="customerId">Customer ID</label>
+      <input
+        type="text"
+        id="customerId"
+        [(ngModel)]="customerId"
+        class="form-control"
+        placeholder="Enter Customer ID"
+      />
+      <button class="btn btn-primary mt-2" (click)="fetchBills()">Fetch Bills</button>
+    </div>
+
+    <form [formGroup]="billForm" (ngSubmit)="generateBill()" class="mt-4">
+      <div class="form-group">
+        <label for="billDate">Bill Date</label>
+        <input type="date" id="billDate" formControlName="billDate" class="form-control" />
+      </div>
+
+      <div class="form-group">
+        <label for="dueDate">Due Date</label>
+        <input type="date" id="dueDate" formControlName="dueDate" class="form-control" />
+      </div>
+
+      <div class="form-group">
+        <label for="noOfUnits">No. of Units</label>
+        <input type="number" id="noOfUnits" formControlName="noOfUnits" class="form-control" />
+      </div>
+
+      <div class="form-group">
+        <label for="billAmount">Bill Amount</label>
+        <input type="number" id="billAmount" formControlName="billAmount" class="form-control" />
+      </div>
+
+      <button type="submit" class="btn btn-success mt-3" [disabled]="billForm.invalid">Generate Bill</button>
+    </form>
+  </div>
+
+  <!-- Grid Section -->
+  <div class="grid-section mt-5">
+    <h3>Generated Bills</h3>
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>Bill ID</th>
+          <th>Bill Date</th>
+          <th>Due Date</th>
+          <th>No. of Units</th>
+          <th>Bill Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let bill of bills">
+          <td>{{ bill.billId }}</td>
+          <td>{{ bill.billDate }}</td>
+          <td>{{ bill.dueDate }}</td>
+          <td>{{ bill.noOfUnits }}</td>
+          <td>{{ bill.billAmount }}</td>
+        </tr>
+        <tr *ngIf="bills.length === 0">
+          <td colspan="5" class="text-center">No bills found.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+```
+
+---
+
+#### **`bill-generation.component.css`**
+Basic styling for the page.
+
+```css
+.container {
+  max-width: 800px;
+  margin: auto;
+}
+
+.input-section,
+.grid-section {
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  margin-bottom: 20px;
+}
+
+.btn {
+  width: 100%;
+}
+```
+
+---
+
+#### **`bill.service.ts`**
+Handles API communication.
+
+```typescript
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+
+@Injectable({
+  providedIn: 'root',
+})
+export class BillService {
+  private baseUrl = 'http://localhost:8080/api/bills';
+
+  constructor(private http: HttpClient) {}
+
+  getBillsByCustomerId(customerId: string): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/${customerId}`);
+  }
+
+  createBill(billData: any): Observable<any> {
+    return this.http.post<any>(this.baseUrl, billData);
+  }
+}
+```
+
+---
+
+### Key Features:
+1. **Dynamic Customer ID**: Customer ID is entered manually, and bills are fetched dynamically.
+2. **Grid View**: Displays all generated bills for the customer.
+3. **Bill Generation Form**: Form for admins to generate bills with field validation.
+4. **Form Validation**: Ensures all fields are filled out with correct formats.
+
+---
+
+Let me know if you need additional features or deployment instructions!
