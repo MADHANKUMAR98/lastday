@@ -743,4 +743,273 @@ If this still doesn't work, let me know!
 
 
 
+To connect the Angular front-end with the Spring Boot back-end, follow these steps:
+
+
+---
+
+1. Update the Back-End:
+
+Ensure the Spring Boot back-end has a REST API endpoint for generating bills. Here's an example if you don't already have it:
+
+Controller
+
+@RestController
+@RequestMapping("/api/bills")
+public class BillController {
+
+    @Autowired
+    private BillService billService;
+
+    @PostMapping("/generate")
+    public ResponseEntity<Billent> generateBill(@RequestBody Billent bill) {
+        Billent generatedBill = billService.generateBill(bill);
+        return new ResponseEntity<>(generatedBill, HttpStatus.CREATED);
+    }
+
+    @GetMapping("/{customerId}")
+    public ResponseEntity<List<Billent>> getBillsByCustomerId(@PathVariable String customerId) {
+        List<Billent> bills = billService.getBillsByCustomerId(customerId);
+        return new ResponseEntity<>(bills, HttpStatus.OK);
+    }
+}
+
+Service
+
+@Service
+public class BillService {
+
+    @Autowired
+    private BillRep billRep;
+
+    public Billent generateBill(Billent bill) {
+        // Logic to generate bill
+        return billRep.save(bill);
+    }
+
+    public List<Billent> getBillsByCustomerId(String customerId) {
+        return billRep.findByCustomerId(customerId);
+    }
+}
+
+Repository
+
+@Repository
+public interface BillRep extends JpaRepository<Billent, Long> {
+    List<Billent> findByCustomerId(String customerId);
+}
+
+
+---
+
+2. Update the Front-End:
+
+You need to create a service in Angular to make HTTP calls to the back-end.
+
+Generate a Service
+
+Run the following command to generate a service:
+
+ng generate service services/bill
+
+Service Code
+
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+
+@Injectable({
+  providedIn: 'root',
+})
+export class BillService {
+  private baseUrl = 'http://localhost:8080/api/bills';
+
+  constructor(private http: HttpClient) {}
+
+  generateBill(bill: any): Observable<any> {
+    return this.http.post(`${this.baseUrl}/generate`, bill);
+  }
+
+  getBillsByCustomerId(customerId: string): Observable<any> {
+    return this.http.get(`${this.baseUrl}/${customerId}`);
+  }
+}
+
+
+---
+
+3. Update the Component:
+
+Bill Generation Component
+
+Update the generateBill and ngOnInit methods to handle API calls.
+
+import { Component, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { BillService } from '../../services/bill.service';
+
+@Component({
+  selector: 'app-bill-generation',
+  standalone: true,
+  templateUrl: './bill-generation.component.html',
+  styleUrls: ['./bill-generation.component.css'],
+  imports: [ReactiveFormsModule, CommonModule],
+})
+export class BillGenerationComponent implements OnInit {
+  billForm!: FormGroup;
+  bills: any[] = [];
+  customerId: string = '';
+
+  constructor(private fb: FormBuilder, private billService: BillService) {}
+
+  ngOnInit(): void {
+    this.billForm = this.fb.group({
+      customerId: ['', Validators.required],
+      billDate: ['', Validators.required],
+      dueDate: ['', Validators.required],
+      noOfUnits: ['', [Validators.required, Validators.min(1)]],
+      billAmount: ['', [Validators.required, Validators.min(0)]],
+    });
+  }
+
+  generateBill(): void {
+    if (this.billForm.invalid) {
+      return;
+    }
+
+    const billData = this.billForm.value;
+    this.billService.generateBill(billData).subscribe({
+      next: (response) => {
+        console.log('Bill generated successfully:', response);
+        this.bills.push(response); // Add the newly generated bill to the list
+      },
+      error: (error) => {
+        console.error('Error generating bill:', error);
+      },
+    });
+  }
+
+  loadBills(): void {
+    if (!this.customerId) {
+      return;
+    }
+
+    this.billService.getBillsByCustomerId(this.customerId).subscribe({
+      next: (response) => {
+        this.bills = response;
+      },
+      error: (error) => {
+        console.error('Error loading bills:', error);
+      },
+    });
+  }
+}
+
+
+---
+
+4. Update the HTML Template
+
+<div class="container">
+  <h2>Generate Bill</h2>
+  <form [formGroup]="billForm" (ngSubmit)="generateBill()" class="form">
+    <div class="form-group">
+      <label for="customerId">Customer ID</label>
+      <input id="customerId" type="text" formControlName="customerId" class="form-control" />
+    </div>
+    <div class="form-group">
+      <label for="billDate">Bill Date</label>
+      <input id="billDate" type="date" formControlName="billDate" class="form-control" />
+    </div>
+    <div class="form-group">
+      <label for="dueDate">Due Date</label>
+      <input id="dueDate" type="date" formControlName="dueDate" class="form-control" />
+    </div>
+    <div class="form-group">
+      <label for="noOfUnits">No of Units</label>
+      <input id="noOfUnits" type="number" formControlName="noOfUnits" class="form-control" />
+    </div>
+    <div class="form-group">
+      <label for="billAmount">Bill Amount</label>
+      <input id="billAmount" type="number" formControlName="billAmount" class="form-control" />
+    </div>
+    <button type="submit" class="btn btn-primary">Generate Bill</button>
+  </form>
+
+  <h3>Load Bills for Customer</h3>
+  <div class="form-group">
+    <input type="text" [(ngModel)]="customerId" class="form-control" placeholder="Enter Customer ID" />
+    <button class="btn btn-secondary mt-2" (click)="loadBills()">Load Bills</button>
+  </div>
+
+  <h3>Generated Bills</h3>
+  <table class="table table-striped mt-3" *ngIf="bills.length > 0">
+    <thead>
+      <tr>
+        <th>Bill ID</th>
+        <th>Customer ID</th>
+        <th>Bill Date</th>
+        <th>Due Date</th>
+        <th>No of Units</th>
+        <th>Bill Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let bill of bills">
+        <td>{{ bill.billId }}</td>
+        <td>{{ bill.customerId }}</td>
+        <td>{{ bill.billDate }}</td>
+        <td>{{ bill.dueDate }}</td>
+        <td>{{ bill.noOfUnits }}</td>
+        <td>{{ bill.billAmount }}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+
+---
+
+5. Start the Application
+
+1. Start the Back-End: Run the Spring Boot application on port 8080.
+
+
+2. Start the Front-End: Run the Angular application using:
+
+ng serve --open
+
+
+
+
+---
+
+Sample Input and Output
+
+Input:
+
+Customer ID: C12345
+
+Bill Date: 2024-12-19
+
+Due Date: 2025-01-19
+
+No of Units: 150
+
+Bill Amount: 2250
+
+
+Output:
+
+A new row is added to the "Generated Bills" table with the above details.
+
+
+
+Let me know if you face any issues!
+
+
+
+
+
+
 
