@@ -391,3 +391,196 @@ Restart the development server (ng serve) after making these changes.
 
 
 
+
+
+
+
+
+
+
+The error occurs because you are using [(ngModel)] for two-way data binding, but the FormsModule is not imported in your component or module. To fix this issue, you need to explicitly import FormsModule in your standalone component.
+
+
+---
+
+Updated Code for bill-generation.component.ts
+
+Here’s how you can fix the error:
+
+import { Component, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
+import { BillService } from '../services/bill.service';
+
+@Component({
+  standalone: true,
+  selector: 'app-bill-generation',
+  templateUrl: './bill-generation.component.html',
+  styleUrls: ['./bill-generation.component.css'],
+  imports: [ReactiveFormsModule, FormsModule], // Add FormsModule here
+})
+export class BillGenerationComponent implements OnInit {
+  billForm: FormGroup;
+  bills: any[] = [];
+  customerId: string = ''; // Two-way data binding for customerId
+
+  constructor(private fb: FormBuilder, private billService: BillService) {
+    this.billForm = this.fb.group({
+      billDate: ['', [Validators.required]],
+      dueDate: ['', [Validators.required]],
+      noOfUnits: ['', [Validators.required, Validators.pattern(/^\d+$/)]],
+      billAmount: ['', [Validators.required, Validators.pattern(/^\d+(\.\d{1,2})?$/)]],
+    });
+  }
+
+  ngOnInit(): void {}
+
+  fetchBills(): void {
+    if (this.customerId.trim()) {
+      this.billService.getBillsByCustomerId(this.customerId).subscribe(
+        (data) => {
+          this.bills = data;
+        },
+        (error) => {
+          console.error('Error fetching bills:', error);
+          this.bills = [];
+        }
+      );
+    }
+  }
+
+  generateBill(): void {
+    if (this.billForm.valid) {
+      const billData = { ...this.billForm.value, customerId: this.customerId };
+      this.billService.createBill(billData).subscribe(
+        (response) => {
+          alert('Bill generated successfully!');
+          this.fetchBills();
+        },
+        (error) => {
+          console.error('Error generating bill:', error);
+          alert('Failed to generate the bill. Please try again.');
+        }
+      );
+    }
+  }
+}
+
+
+---
+
+Key Fix:
+
+imports: [FormsModule]: Add FormsModule to support [(ngModel)] for two-way data binding.
+
+
+
+---
+
+HTML (bill-generation.component.html)
+
+<div class="container">
+  <div class="row">
+    <div class="col-md-6">
+      <h3>Generate Bill</h3>
+      <form [formGroup]="billForm" (ngSubmit)="generateBill()" class="form-group">
+        <div class="form-group">
+          <label for="billDate">Bill Date</label>
+          <input
+            type="date"
+            id="billDate"
+            formControlName="billDate"
+            class="form-control"
+            [ngClass]="{ 'is-invalid': billForm.get('billDate')?.invalid && billForm.get('billDate')?.touched }"
+          />
+        </div>
+        <div class="form-group">
+          <label for="dueDate">Due Date</label>
+          <input
+            type="date"
+            id="dueDate"
+            formControlName="dueDate"
+            class="form-control"
+            [ngClass]="{ 'is-invalid': billForm.get('dueDate')?.invalid && billForm.get('dueDate')?.touched }"
+          />
+        </div>
+        <div class="form-group">
+          <label for="noOfUnits">Number of Units</label>
+          <input
+            type="text"
+            id="noOfUnits"
+            formControlName="noOfUnits"
+            class="form-control"
+            [ngClass]="{ 'is-invalid': billForm.get('noOfUnits')?.invalid && billForm.get('noOfUnits')?.touched }"
+          />
+        </div>
+        <div class="form-group">
+          <label for="billAmount">Bill Amount</label>
+          <input
+            type="text"
+            id="billAmount"
+            formControlName="billAmount"
+            class="form-control"
+            [ngClass]="{ 'is-invalid': billForm.get('billAmount')?.invalid && billForm.get('billAmount')?.touched }"
+          />
+        </div>
+        <div class="form-group mt-3">
+          <button type="submit" class="btn btn-primary" [disabled]="billForm.invalid">Generate Bill</button>
+        </div>
+      </form>
+    </div>
+    <div class="col-md-6">
+      <h3>Previous Bills</h3>
+      <input
+        type="text"
+        [(ngModel)]="customerId"
+        placeholder="Enter Customer ID"
+        class="form-control mb-3"
+      />
+      <button class="btn btn-secondary mb-3" (click)="fetchBills()">Fetch Bills</button>
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>Bill ID</th>
+            <th>Bill Date</th>
+            <th>Due Date</th>
+            <th>Units</th>
+            <th>Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let bill of bills">
+            <td>{{ bill.billId }}</td>
+            <td>{{ bill.billDate }}</td>
+            <td>{{ bill.dueDate }}</td>
+            <td>{{ bill.noOfUnits }}</td>
+            <td>{{ bill.billAmount }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+
+---
+
+Explanation
+
+1. Dynamic customerId Binding: The customerId is two-way bound with [(ngModel)].
+
+
+2. FormsModule Added: Supports [(ngModel)].
+
+
+3. ReactiveFormsModule Added: Supports formGroup for reactive forms.
+
+
+4. Styling: Bootstrap classes for layout and responsiveness.
+
+
+
+Make sure to restart your development server (ng serve) after applying these changes!
+
+
+
+
