@@ -499,3 +499,178 @@ public class CorsConfig {
     }
 }
 ```
+
+
+
+In Angular 14 and later (including Angular 19), standalone components remove the need for traditional modules like `AppModule`. Each component can declare its own dependencies, making your application more modular and lightweight.
+
+Here’s how you can implement your project using standalone components:
+
+---
+
+### **Steps to Implement Standalone Components**
+
+1. **Create a Standalone Component**
+   Use the Angular CLI to generate a standalone component:
+   ```bash
+   ng generate component user-management --standalone
+   ```
+
+   This will create the following files in your `src/app/user-management` directory:
+   - `user-management.component.ts`
+   - `user-management.component.html`
+   - `user-management.component.css`
+   - `user-management.component.spec.ts`
+
+   The `user-management.component.ts` file will look like this:
+   ```typescript
+   import { Component } from '@angular/core';
+
+   @Component({
+     selector: 'app-user-management',
+     standalone: true,
+     templateUrl: './user-management.component.html',
+     styleUrls: ['./user-management.component.css'],
+     imports: [] // Add any required Angular modules here
+   })
+   export class UserManagementComponent {
+     // Component logic goes here
+   }
+   ```
+
+2. **Set Up the Root Component**
+   In standalone architecture, you use a standalone root component instead of an `AppModule`.
+
+   Open the `src/main.ts` file and bootstrap your root component directly:
+   ```typescript
+   import { bootstrapApplication } from '@angular/platform-browser';
+   import { UserManagementComponent } from './app/user-management/user-management.component';
+   import { importProvidersFrom } from '@angular/core';
+   import { HttpClientModule } from '@angular/common/http';
+   import { provideRouter, Routes } from '@angular/router';
+
+   const routes: Routes = [
+     { path: '', component: UserManagementComponent }, // Default route
+   ];
+
+   bootstrapApplication(UserManagementComponent, {
+     providers: [
+       provideRouter(routes),
+       importProvidersFrom(HttpClientModule),
+     ]
+   }).catch(err => console.error(err));
+   ```
+
+3. **Add Required Angular Modules**
+   Modify `user-management.component.ts` to include any Angular modules your component needs (e.g., `FormsModule`, `ReactiveFormsModule`):
+   ```typescript
+   import { Component } from '@angular/core';
+   import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+   import { HttpClientModule } from '@angular/common/http';
+
+   @Component({
+     selector: 'app-user-management',
+     standalone: true,
+     templateUrl: './user-management.component.html',
+     styleUrls: ['./user-management.component.css'],
+     imports: [FormsModule, ReactiveFormsModule, HttpClientModule]
+   })
+   export class UserManagementComponent {
+     // Component logic
+   }
+   ```
+
+4. **Create the Form in the Component Template**
+   Update the `user-management.component.html` file with your user management form:
+   ```html
+   <form [formGroup]="userForm" (ngSubmit)="onSubmit()">
+     <div>
+       <label for="firstName">First Name:</label>
+       <input id="firstName" formControlName="firstName" required />
+     </div>
+
+     <div>
+       <label for="lastName">Last Name:</label>
+       <input id="lastName" formControlName="lastName" required />
+     </div>
+
+     <div>
+       <label for="aadharId">Aadhar ID:</label>
+       <input id="aadharId" formControlName="aadharId" maxlength="12" required />
+     </div>
+
+     <div>
+       <label for="email">Email:</label>
+       <input id="email" formControlName="email" type="email" required />
+     </div>
+
+     <div>
+       <label for="password">Password:</label>
+       <input id="password" formControlName="password" type="password" required />
+     </div>
+
+     <div>
+       <label for="phoneNumber">Phone Number:</label>
+       <input id="phoneNumber" formControlName="phoneNumber" required />
+     </div>
+
+     <button type="submit" [disabled]="userForm.invalid">Register</button>
+   </form>
+   ```
+
+5. **Add Form Validation Logic**
+   Add form validation logic in the `user-management.component.ts` file:
+   ```typescript
+   import { Component } from '@angular/core';
+   import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+   import { HttpClient } from '@angular/common/http';
+
+   @Component({
+     selector: 'app-user-management',
+     standalone: true,
+     templateUrl: './user-management.component.html',
+     styleUrls: ['./user-management.component.css'],
+     imports: [ReactiveFormsModule, HttpClientModule]
+   })
+   export class UserManagementComponent {
+     userForm: FormGroup;
+
+     constructor(private fb: FormBuilder, private http: HttpClient) {
+       this.userForm = this.fb.group({
+         firstName: ['', Validators.required],
+         lastName: ['', Validators.required],
+         aadharId: ['', [Validators.required, Validators.maxLength(12)]],
+         email: ['', [Validators.required, Validators.email]],
+         password: ['', [Validators.required, Validators.minLength(6)]],
+         phoneNumber: ['', Validators.required],
+       });
+     }
+
+     onSubmit() {
+       if (this.userForm.valid) {
+         this.http.post('http://localhost:8080/api/users', this.userForm.value)
+           .subscribe({
+             next: (response) => console.log('User registered:', response),
+             error: (error) => console.error('Error:', error)
+           });
+       }
+     }
+   }
+   ```
+
+6. **Run the Application**
+   Start the development server:
+   ```bash
+   ng serve
+   ```
+
+   Open `http://localhost:4200` in your browser. The form should display, and submitting it will send a POST request to your backend API.
+
+---
+
+### **Advantages of Standalone Components**
+- Simplified structure without `AppModule`.
+- Better modularization.
+- Improved tree-shaking for smaller bundles.
+
+This setup aligns with Angular 19's modern architecture, focusing on standalone components. Let me know if you need additional features or guidance!
