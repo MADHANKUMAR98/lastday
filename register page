@@ -279,3 +279,223 @@ button:disabled {
   - **User Registration**: Register a new user, ensuring all validations are enforced.
 
 This setup provides a professional, fully validated Angular 19 front page for interacting with your backend.
+
+
+
+
+
+
+
+
+
+
+To create a front page in Angular 19 that interacts with your Spring Boot backend to fetch and display user data, you can follow these steps:
+
+---
+
+### **1. Angular Frontend Setup**
+
+#### **Create Angular Component for User Management**
+Run the following commands to set up the Angular component:
+
+```bash
+ng generate component user-management
+```
+
+---
+
+#### **Service to Interact with Backend**
+Create a service to handle HTTP requests:
+
+```bash
+ng generate service user
+```
+
+In the `user.service.ts`, add the methods to interact with the backend:
+
+```typescript
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class UserService {
+
+  private baseUrl = 'http://localhost:8080/api/users'; // Replace with your backend URL
+
+  constructor(private http: HttpClient) {}
+
+  getUserById(userId: string): Observable<any> {
+    return this.http.get(`${this.baseUrl}/${userId}`);
+  }
+
+  registerUser(user: any): Observable<any> {
+    return this.http.post(`${this.baseUrl}/register`, user);
+  }
+}
+```
+
+---
+
+#### **User Model**
+Define a user model that matches your Spring Boot `User` entity:
+
+```typescript
+export interface User {
+  userId?: string;
+  firstName: string;
+  lastName: string;
+  aadharId: string;
+  password: string;
+  phoneNumber: string;
+  email: string;
+}
+```
+
+---
+
+#### **HTML Template for Front Page**
+In `user-management.component.html`, create a form for user registration and a search input for fetching users:
+
+```html
+<div class="container">
+  <h2>User Management</h2>
+
+  <!-- Fetch User by ID -->
+  <div>
+    <h3>Find User</h3>
+    <input type="text" [(ngModel)]="userId" placeholder="Enter User ID" />
+    <button (click)="fetchUser()">Fetch User</button>
+    <div *ngIf="fetchedUser">
+      <h4>User Details:</h4>
+      <p><strong>First Name:</strong> {{ fetchedUser.firstName }}</p>
+      <p><strong>Last Name:</strong> {{ fetchedUser.lastName }}</p>
+      <p><strong>Email:</strong> {{ fetchedUser.email }}</p>
+    </div>
+  </div>
+
+  <!-- Register New User -->
+  <div>
+    <h3>Register New User</h3>
+    <form (ngSubmit)="registerUser()">
+      <label>First Name:</label>
+      <input type="text" [(ngModel)]="newUser.firstName" name="firstName" required />
+
+      <label>Last Name:</label>
+      <input type="text" [(ngModel)]="newUser.lastName" name="lastName" required />
+
+      <label>Aadhar ID:</label>
+      <input type="text" [(ngModel)]="newUser.aadharId" name="aadharId" required />
+
+      <label>Password:</label>
+      <input type="password" [(ngModel)]="newUser.password" name="password" required />
+
+      <label>Phone Number:</label>
+      <input type="text" [(ngModel)]="newUser.phoneNumber" name="phoneNumber" required />
+
+      <label>Email:</label>
+      <input type="email" [(ngModel)]="newUser.email" name="email" required />
+
+      <button type="submit">Register</button>
+    </form>
+  </div>
+</div>
+```
+
+---
+
+#### **Component Logic**
+In `user-management.component.ts`, add the logic for fetching and registering users:
+
+```typescript
+import { Component } from '@angular/core';
+import { UserService } from '../user.service';
+import { User } from '../models/user.model';
+
+@Component({
+  selector: 'app-user-management',
+  templateUrl: './user-management.component.html',
+  styleUrls: ['./user-management.component.css']
+})
+export class UserManagementComponent {
+  userId: string = '';
+  fetchedUser: User | null = null;
+
+  newUser: User = {
+    firstName: '',
+    lastName: '',
+    aadharId: '',
+    password: '',
+    phoneNumber: '',
+    email: ''
+  };
+
+  constructor(private userService: UserService) {}
+
+  fetchUser() {
+    this.userService.getUserById(this.userId).subscribe({
+      next: (data) => (this.fetchedUser = data),
+      error: (err) => console.error('Error fetching user', err)
+    });
+  }
+
+  registerUser() {
+    this.userService.registerUser(this.newUser).subscribe({
+      next: (data) => {
+        console.log('User registered:', data);
+        alert('User registered successfully!');
+      },
+      error: (err) => {
+        console.error('Error registering user', err);
+        alert('Error registering user!');
+      }
+    });
+  }
+}
+```
+
+---
+
+### **2. Backend Endpoints**
+
+Ensure that your backend provides the following REST endpoints:
+
+- **Get User by ID**: `GET /api/users/{userId}`
+- **Register User**: `POST /api/users/register`
+
+---
+
+### **3. Integration Steps**
+1. Start the Spring Boot application on port `8080`.
+2. Run the Angular application (`ng serve`) and ensure it runs on port `4200`.
+3. Test the functionality:
+   - Fetch a user by entering their `userId`.
+   - Register a new user with the form.
+
+---
+
+### **4. Additional Notes**
+- Configure CORS in your Spring Boot application to allow requests from the Angular app:
+
+```java
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+@Configuration
+public class CorsConfig {
+
+    @Bean
+    public WebMvcConfigurer corsConfigurer() {
+        return new WebMvcConfigurer() {
+            @Override
+            public void addCorsMappings(CorsRegistry registry) {
+                registry.addMapping("/**").allowedOrigins("http://localhost:4200");
+            }
+        };
+    }
+}
+```
