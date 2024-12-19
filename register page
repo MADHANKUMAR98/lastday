@@ -1,0 +1,281 @@
+To include comprehensive form validations and all required Angular 19 components for the `UserManagementComponent`, follow these steps:
+
+---
+
+### **1. Enhanced Angular Form with Validations**
+
+Update the `user-management.component.html` to include validation messages and form controls using Angular's `ReactiveFormsModule`.
+
+#### **HTML Template**
+```html
+<div class="container">
+  <h2>User Management</h2>
+
+  <!-- Fetch User by ID -->
+  <div>
+    <h3>Find User</h3>
+    <form [formGroup]="fetchUserForm" (ngSubmit)="fetchUser()">
+      <label for="userId">User ID:</label>
+      <input
+        id="userId"
+        type="text"
+        formControlName="userId"
+        placeholder="Enter User ID"
+        required
+      />
+      <div *ngIf="fetchUserForm.get('userId')?.invalid && fetchUserForm.get('userId')?.touched">
+        <small class="error">User ID is required.</small>
+      </div>
+      <button type="submit" [disabled]="fetchUserForm.invalid">Fetch User</button>
+    </form>
+    <div *ngIf="fetchedUser">
+      <h4>User Details:</h4>
+      <p><strong>First Name:</strong> {{ fetchedUser.firstName }}</p>
+      <p><strong>Last Name:</strong> {{ fetchedUser.lastName }}</p>
+      <p><strong>Email:</strong> {{ fetchedUser.email }}</p>
+    </div>
+  </div>
+
+  <!-- Register New User -->
+  <div>
+    <h3>Register New User</h3>
+    <form [formGroup]="registerUserForm" (ngSubmit)="registerUser()">
+      <div>
+        <label for="firstName">First Name:</label>
+        <input
+          id="firstName"
+          type="text"
+          formControlName="firstName"
+          required
+        />
+        <div *ngIf="registerUserForm.get('firstName')?.invalid && registerUserForm.get('firstName')?.touched">
+          <small class="error">First name is required.</small>
+        </div>
+      </div>
+
+      <div>
+        <label for="lastName">Last Name:</label>
+        <input
+          id="lastName"
+          type="text"
+          formControlName="lastName"
+          required
+        />
+        <div *ngIf="registerUserForm.get('lastName')?.invalid && registerUserForm.get('lastName')?.touched">
+          <small class="error">Last name is required.</small>
+        </div>
+      </div>
+
+      <div>
+        <label for="aadharId">Aadhar ID:</label>
+        <input
+          id="aadharId"
+          type="text"
+          formControlName="aadharId"
+          required
+          minlength="12"
+          maxlength="12"
+        />
+        <div *ngIf="registerUserForm.get('aadharId')?.invalid && registerUserForm.get('aadharId')?.touched">
+          <small class="error">Aadhar ID must be 12 digits.</small>
+        </div>
+      </div>
+
+      <div>
+        <label for="password">Password:</label>
+        <input
+          id="password"
+          type="password"
+          formControlName="password"
+          required
+          minlength="6"
+        />
+        <div *ngIf="registerUserForm.get('password')?.invalid && registerUserForm.get('password')?.touched">
+          <small class="error">Password must be at least 6 characters long.</small>
+        </div>
+      </div>
+
+      <div>
+        <label for="phoneNumber">Phone Number:</label>
+        <input
+          id="phoneNumber"
+          type="text"
+          formControlName="phoneNumber"
+          required
+          pattern="^[0-9]{10}$"
+        />
+        <div *ngIf="registerUserForm.get('phoneNumber')?.invalid && registerUserForm.get('phoneNumber')?.touched">
+          <small class="error">Phone number must be 10 digits.</small>
+        </div>
+      </div>
+
+      <div>
+        <label for="email">Email:</label>
+        <input
+          id="email"
+          type="email"
+          formControlName="email"
+          required
+        />
+        <div *ngIf="registerUserForm.get('email')?.invalid && registerUserForm.get('email')?.touched">
+          <small class="error">Enter a valid email address.</small>
+        </div>
+      </div>
+
+      <button type="submit" [disabled]="registerUserForm.invalid">Register</button>
+    </form>
+  </div>
+</div>
+```
+
+---
+
+### **2. Component Logic with Form Validations**
+
+Update `user-management.component.ts` to use Angular's `FormBuilder` for creating reactive forms.
+
+```typescript
+import { Component, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { UserService } from '../user.service';
+import { User } from '../models/user.model';
+
+@Component({
+  selector: 'app-user-management',
+  templateUrl: './user-management.component.html',
+  styleUrls: ['./user-management.component.css']
+})
+export class UserManagementComponent implements OnInit {
+  fetchUserForm!: FormGroup;
+  registerUserForm!: FormGroup;
+  fetchedUser: User | null = null;
+
+  constructor(private fb: FormBuilder, private userService: UserService) {}
+
+  ngOnInit(): void {
+    this.fetchUserForm = this.fb.group({
+      userId: ['', Validators.required]
+    });
+
+    this.registerUserForm = this.fb.group({
+      firstName: ['', Validators.required],
+      lastName: ['', Validators.required],
+      aadharId: [
+        '',
+        [Validators.required, Validators.minLength(12), Validators.maxLength(12)]
+      ],
+      password: ['', [Validators.required, Validators.minLength(6)]],
+      phoneNumber: ['', [Validators.required, Validators.pattern(/^[0-9]{10}$/)]],
+      email: ['', [Validators.required, Validators.email]]
+    });
+  }
+
+  fetchUser() {
+    const userId = this.fetchUserForm.get('userId')?.value;
+    this.userService.getUserById(userId).subscribe({
+      next: (data) => (this.fetchedUser = data),
+      error: (err) => console.error('Error fetching user:', err)
+    });
+  }
+
+  registerUser() {
+    const user: User = this.registerUserForm.value;
+    this.userService.registerUser(user).subscribe({
+      next: (data) => {
+        console.log('User registered:', data);
+        alert('User registered successfully!');
+        this.registerUserForm.reset();
+      },
+      error: (err) => {
+        console.error('Error registering user:', err);
+        alert('Error registering user.');
+      }
+    });
+  }
+}
+```
+
+---
+
+### **3. Additional Angular Components**
+
+#### **App Module**
+Add `ReactiveFormsModule` to the `AppModule`:
+
+```typescript
+import { NgModule } from '@angular/core';
+import { BrowserModule } from '@angular/platform-browser';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { HttpClientModule } from '@angular/common/http';
+import { AppComponent } from './app.component';
+import { UserManagementComponent } from './user-management/user-management.component';
+
+@NgModule({
+  declarations: [AppComponent, UserManagementComponent],
+  imports: [
+    BrowserModule,
+    FormsModule,
+    ReactiveFormsModule,
+    HttpClientModule
+  ],
+  providers: [],
+  bootstrap: [AppComponent]
+})
+export class AppModule {}
+```
+
+---
+
+### **4. Styling**
+
+Add basic styles in `user-management.component.css`:
+
+```css
+.container {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+label {
+  display: block;
+  margin-top: 10px;
+}
+
+input {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+button:disabled {
+  background-color: #ccc;
+}
+
+.error {
+  color: red;
+  font-size: 12px;
+}
+```
+
+---
+
+### **5. Final Setup**
+
+- Start the Spring Boot application.
+- Run the Angular application using `ng serve`.
+- Test:
+  - **User Fetch**: Enter a valid `userId` to fetch user data.
+  - **User Registration**: Register a new user, ensuring all validations are enforced.
+
+This setup provides a professional, fully validated Angular 19 front page for interacting with your backend.
