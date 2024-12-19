@@ -1,0 +1,281 @@
+Below is the Spring Boot backend code in MVC for your requirements. This implementation includes:
+
+1. **Admin Generating Bills**: Admin can generate bills for a customer with auto-generated `billId`.
+2. **User Viewing Bills and Making Payments**: Users can view their bills and make payments. 
+
+---
+
+### **1. Entity Class: Bill (Billent)**
+
+```java
+package com.tangedco.spring.eb_billing_system.entity;
+
+import jakarta.persistence.*;
+import java.time.LocalDate;
+
+@Entity
+@Table(name = "billent")
+public class Billent {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "bill_id")
+    private Long billId;
+
+    @Column(name = "customer_id", nullable = false)
+    private String customerId;
+
+    @Column(name = "bill_date", nullable = false)
+    private LocalDate billDate;
+
+    @Column(name = "due_amount", nullable = false)
+    private Double dueAmount;
+
+    @Column(name = "no_of_units", nullable = false)
+    private Integer noOfUnits;
+
+    @Column(name = "bill_amount", nullable = false)
+    private Double billAmount;
+
+    @Column(name = "is_paid", nullable = false)
+    private boolean isPaid;
+
+    // Getters and Setters
+    public Long getBillId() {
+        return billId;
+    }
+
+    public void setBillId(Long billId) {
+        this.billId = billId;
+    }
+
+    public String getCustomerId() {
+        return customerId;
+    }
+
+    public void setCustomerId(String customerId) {
+        this.customerId = customerId;
+    }
+
+    public LocalDate getBillDate() {
+        return billDate;
+    }
+
+    public void setBillDate(LocalDate billDate) {
+        this.billDate = billDate;
+    }
+
+    public Double getDueAmount() {
+        return dueAmount;
+    }
+
+    public void setDueAmount(Double dueAmount) {
+        this.dueAmount = dueAmount;
+    }
+
+    public Integer getNoOfUnits() {
+        return noOfUnits;
+    }
+
+    public void setNoOfUnits(Integer noOfUnits) {
+        this.noOfUnits = noOfUnits;
+    }
+
+    public Double getBillAmount() {
+        return billAmount;
+    }
+
+    public void setBillAmount(Double billAmount) {
+        this.billAmount = billAmount;
+    }
+
+    public boolean isPaid() {
+        return isPaid;
+    }
+
+    public void setPaid(boolean isPaid) {
+        this.isPaid = isPaid;
+    }
+}
+```
+
+---
+
+### **2. Repository Interface: Bill Repository (Billrep)**
+
+```java
+package com.tangedco.spring.eb_billing_system.repository;
+
+import com.tangedco.spring.eb_billing_system.entity.Billent;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+
+@Repository
+public interface Billrep extends JpaRepository<Billent, Long> {
+    List<Billent> findByCustomerId(String customerId);
+}
+```
+
+---
+
+### **3. Service Layer**
+
+#### **Bill Service Interface**
+
+```java
+package com.tangedco.spring.eb_billing_system.service;
+
+import com.tangedco.spring.eb_billing_system.entity.Billent;
+
+import java.util.List;
+
+public interface BillService {
+    Billent generateBill(Billent billent);
+    List<Billent> getBillsByCustomerId(String customerId);
+    Billent payBill(Long billId);
+}
+```
+
+#### **Bill Service Implementation**
+
+```java
+package com.tangedco.spring.eb_billing_system.service;
+
+import com.tangedco.spring.eb_billing_system.entity.Billent;
+import com.tangedco.spring.eb_billing_system.repository.Billrep;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
+
+@Service
+public class BillServiceImpl implements BillService {
+
+    private final Billrep billrep;
+
+    public BillServiceImpl(Billrep billrep) {
+        this.billrep = billrep;
+    }
+
+    @Override
+    public Billent generateBill(Billent billent) {
+        billent.setBillDate(LocalDate.now());
+        billent.setPaid(false);
+        return billrep.save(billent);
+    }
+
+    @Override
+    public List<Billent> getBillsByCustomerId(String customerId) {
+        return billrep.findByCustomerId(customerId);
+    }
+
+    @Override
+    public Billent payBill(Long billId) {
+        Optional<Billent> optionalBill = billrep.findById(billId);
+        if (optionalBill.isPresent()) {
+            Billent bill = optionalBill.get();
+            if (!bill.isPaid()) {
+                bill.setPaid(true);
+                bill.setDueAmount(0.0);
+                return billrep.save(bill);
+            } else {
+                throw new RuntimeException("Bill is already paid.");
+            }
+        } else {
+            throw new RuntimeException("Bill not found for id - " + billId);
+        }
+    }
+}
+```
+
+---
+
+### **4. Controller Layer**
+
+```java
+package com.tangedco.spring.eb_billing_system.controller;
+
+import com.tangedco.spring.eb_billing_system.entity.Billent;
+import com.tangedco.spring.eb_billing_system.service.BillService;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/bills")
+public class BillController {
+
+    private final BillService billService;
+
+    public BillController(BillService billService) {
+        this.billService = billService;
+    }
+
+    // Admin generates a bill
+    @PostMapping("/generate")
+    public ResponseEntity<Billent> generateBill(@RequestBody Billent billent) {
+        Billent createdBill = billService.generateBill(billent);
+        return ResponseEntity.ok(createdBill);
+    }
+
+    // User views bills
+    @GetMapping("/user/{customerId}")
+    public ResponseEntity<List<Billent>> getBillsByCustomerId(@PathVariable String customerId) {
+        List<Billent> bills = billService.getBillsByCustomerId(customerId);
+        return ResponseEntity.ok(bills);
+    }
+
+    // User pays a bill
+    @PostMapping("/pay/{billId}")
+    public ResponseEntity<Billent> payBill(@PathVariable Long billId) {
+        Billent paidBill = billService.payBill(billId);
+        return ResponseEntity.ok(paidBill);
+    }
+}
+```
+
+---
+
+### **Database Table: billent**
+
+```sql
+CREATE TABLE billent (
+    bill_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    customer_id VARCHAR(50) NOT NULL,
+    bill_date DATE NOT NULL,
+    due_amount DOUBLE NOT NULL,
+    no_of_units INT NOT NULL,
+    bill_amount DOUBLE NOT NULL,
+    is_paid BOOLEAN NOT NULL
+);
+```
+
+---
+
+### **Endpoints**
+
+1. **Admin Generates Bill**:  
+   - **POST** `/api/bills/generate`  
+   - **Body**:  
+     ```json
+     {
+       "customerId": "CUST123",
+       "dueAmount": 500.00,
+       "noOfUnits": 100,
+       "billAmount": 500.00
+     }
+     ```
+
+2. **User Views Bills**:  
+   - **GET** `/api/bills/user/{customerId}`  
+
+3. **User Pays Bill**:  
+   - **POST** `/api/bills/pay/{billId}`  
+
+---
+
+This implementation follows the Spring MVC architecture and uses a clear separation of concerns. Let me know if you need further assistance!
