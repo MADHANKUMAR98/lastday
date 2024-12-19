@@ -317,3 +317,151 @@ export class UserManagementComponent implements OnInit {
 4. **Professional UI**: Bootstrap used for styling.
 
 Let me know if you need further assistance!
+
+
+
+
+If the error persists and you're still facing issues, you can explicitly type your formControls and ensure proper form validation without using the index signature. Below is the corrected version of your code with all necessary fixes for form validation and property access:
+
+TypeScript:
+
+Ensure that you're using FormGroup correctly with explicit typing for formControls. Here's how the complete TypeScript file should look:
+
+import { Component } from '@angular/core';
+import { FormGroup, FormBuilder, Validators } from '@angular/forms';
+
+@Component({
+  selector: 'app-user-management',
+  templateUrl: './user-management.component.html',
+  styleUrls: ['./user-management.component.scss']
+})
+export class UserManagementComponent {
+  userForm: FormGroup;
+  isEditMode = false;
+
+  constructor(private fb: FormBuilder) {
+    this.userForm = this.fb.group({
+      username: ['', [Validators.required, Validators.minLength(3)]],
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', [Validators.required, Validators.minLength(8)]],
+      confirmPassword: ['', Validators.required]
+    }, { validator: this.passwordMatchValidator });
+  }
+
+  get formControls() {
+    return this.userForm.controls;
+  }
+
+  passwordMatchValidator(group: FormGroup): { [key: string]: boolean } | null {
+    const password = group.get('password')?.value;
+    const confirmPassword = group.get('confirmPassword')?.value;
+    return password === confirmPassword ? null : { 'mismatch': true };
+  }
+
+  onSubmit() {
+    if (this.userForm.valid) {
+      console.log('Form Submitted', this.userForm.value);
+    }
+  }
+}
+
+Explanation:
+
+FormGroup: Explicitly define the form controls using FormBuilder and apply the necessary validators (required, minLength, email).
+
+Password Match Validator: A custom validator is added to ensure that the password and confirm password fields match.
+
+formControls Getter: This getter provides access to the form controls, ensuring proper typing and allowing you to access them with formControls['password'] or formControls['email'].
+
+
+HTML:
+
+Now, in the template, use bracket notation for accessing form control properties and display validation messages correctly:
+
+<form [formGroup]="userForm" (ngSubmit)="onSubmit()">
+  <div class="form-group">
+    <label for="username">Username</label>
+    <input
+      type="text"
+      id="username"
+      class="form-control"
+      formControlName="username"
+    />
+    <small class="text-danger" *ngIf="formControls['username'].touched && formControls['username'].invalid">
+      Username is required (at least 3 characters).
+    </small>
+  </div>
+
+  <div class="form-group">
+    <label for="email">Email</label>
+    <input
+      type="email"
+      id="email"
+      class="form-control"
+      formControlName="email"
+    />
+    <small class="text-danger" *ngIf="formControls['email'].touched && formControls['email'].invalid">
+      A valid email is required.
+    </small>
+  </div>
+
+  <div class="form-group">
+    <label for="password">Password</label>
+    <input
+      type="password"
+      id="password"
+      class="form-control"
+      formControlName="password"
+    />
+    <small class="text-danger" *ngIf="formControls['password'].touched && formControls['password'].invalid">
+      Password must be at least 8 characters long.
+    </small>
+  </div>
+
+  <div class="form-group">
+    <label for="confirmPassword">Confirm Password</label>
+    <input
+      type="password"
+      id="confirmPassword"
+      class="form-control"
+      formControlName="confirmPassword"
+    />
+    <small class="text-danger" *ngIf="formControls['confirmPassword'].touched && formControls['confirmPassword'].invalid">
+      Confirm password is required.
+    </small>
+    <small class="text-danger" *ngIf="userForm.hasError('mismatch') && formControls['confirmPassword'].touched">
+      Passwords do not match.
+    </small>
+  </div>
+
+  <button type="submit" class="btn btn-primary mt-3" [disabled]="userForm.invalid">
+    {{ isEditMode ? 'Update User' : 'Add User' }}
+  </button>
+</form>
+
+Explanation:
+
+Bracket Notation: Use formControls['username'], formControls['email'], formControls['password'], and formControls['confirmPassword'] in the template to access form controls dynamically.
+
+Validation Messages: Show appropriate validation messages when fields are touched and invalid.
+
+Password Match: The passwordMatchValidator ensures the password and confirm password fields match, with an error message displayed if they don't.
+
+
+Key Points:
+
+1. Explicit Typing: In TypeScript, the formControls getter makes sure we access the form controls correctly with type safety.
+
+
+2. Bracket Notation: Since we don't use an index signature, Angular will allow the use of bracket notation (formControls['password']).
+
+
+3. Validation Messages: Display detailed validation messages based on whether the form control is touched and invalid.
+
+
+4. Submit Button: The submit button is disabled if the form is invalid.
+
+
+
+This should resolve the issue and allow you to properly handle form validation and submissions.
+
