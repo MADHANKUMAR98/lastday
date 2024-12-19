@@ -1,0 +1,185 @@
+When the front end is not able to hit the backend, the issue is typically related to one of the following:
+
+1. CORS Issue
+
+If the backend server does not allow requests from the frontend's domain, you will see no reflection in the backend.
+
+Solution:
+
+In your Spring Boot backend, add the following CORS configuration:
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+@Configuration
+public class CorsConfig {
+
+    @Bean
+    public WebMvcConfigurer corsConfigurer() {
+        return new WebMvcConfigurer() {
+            @Override
+            public void addCorsMappings(CorsRegistry registry) {
+                registry.addMapping("/**")
+                        .allowedOrigins("http://localhost:4200") // Frontend URL
+                        .allowedMethods("GET", "POST", "PUT", "DELETE")
+                        .allowedHeaders("*");
+            }
+        };
+    }
+}
+
+
+---
+
+2. Incorrect API URL
+
+Ensure the API endpoint URL in the Angular service matches the backend endpoint.
+
+Check in bill.service.ts:
+
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+
+@Injectable({
+  providedIn: 'root',
+})
+export class BillService {
+  private apiUrl = 'http://localhost:8080/api/v1/bills'; // Update this to match your backend endpoint
+
+  constructor(private http: HttpClient) {}
+
+  generateBill(billData: any): Observable<any> {
+    return this.http.post(`${this.apiUrl}`, billData);
+  }
+
+  getBillsByCustomerId(customerId: string): Observable<any> {
+    return this.http.get(`${this.apiUrl}/customer/${customerId}`);
+  }
+}
+
+
+---
+
+3. Backend Not Running
+
+Make sure your Spring Boot application is running on the specified port (8080 by default).
+
+Solution:
+
+Start the backend application.
+
+Verify that it is running by accessing http://localhost:8080/actuator/health (if actuator is enabled) or another endpoint like http://localhost:8080/api/v1/bills.
+
+
+
+---
+
+4. Angular Proxy Not Configured
+
+If your Angular app is running on localhost:4200 and trying to communicate with the backend at localhost:8080, a proxy configuration is required to avoid CORS and simplify requests.
+
+Solution:
+
+Create a proxy.conf.json in the Angular project root:
+
+{
+  "/api": {
+    "target": "http://localhost:8080",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug"
+  }
+}
+
+Update angular.json to include the proxy:
+
+"serve": {
+  "options": {
+    "proxyConfig": "proxy.conf.json"
+  }
+}
+
+Now, access the backend using relative paths, e.g., /api/v1/bills.
+
+
+---
+
+5. Network or Port Issue
+
+If there is a port conflict or the backend server isn't accessible:
+
+Solution:
+
+Verify backend port (8080) isn't in use by another application.
+
+Check backend logs to ensure no startup errors.
+
+Ensure your frontend and backend are running on the same network.
+
+
+
+---
+
+6. Console/Network Errors
+
+Open the browser's developer tools (F12) and check the Console or Network tabs for error messages. Look for:
+
+404: Indicates incorrect API endpoint.
+
+500: Indicates a server error.
+
+No response: Indicates backend is unreachable.
+
+
+
+---
+
+7. Backend Debugging
+
+Add logging to the backend controller to ensure the request reaches it:
+
+@RestController
+@RequestMapping("/api/v1/bills")
+public class BillController {
+
+    private final BillService billService;
+
+    public BillController(BillService billService) {
+        this.billService = billService;
+    }
+
+    @PostMapping
+    public ResponseEntity<Billent> generateBill(@RequestBody Billent billent) {
+        System.out.println("Received Bill Data: " + billent);
+        Billent createdBill = billService.generateBill(billent);
+        return ResponseEntity.ok(createdBill);
+    }
+
+    @GetMapping("/customer/{customerId}")
+    public ResponseEntity<List<Billent>> getBillsByCustomerId(@PathVariable String customerId) {
+        System.out.println("Fetching bills for customer ID: " + customerId);
+        List<Billent> bills = billService.getBillsByCustomerId(customerId);
+        return ResponseEntity.ok(bills);
+    }
+}
+
+
+---
+
+Final Steps to Debug:
+
+1. Verify backend is running and accessible via curl or Postman.
+
+
+2. Ensure the frontend API calls match the backend endpoints and payload structure.
+
+
+3. Check network activity in the browser's developer tools.
+
+
+
+Let me know if the issue persists after these steps!
+
