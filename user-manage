@@ -1,4 +1,4 @@
-Here's a complete **Angular 19 user management application** with robust **form validations**, well-structured code, and professional criteria:
+1Here's a complete **Angular 19 user management application** with robust **form validations**, well-structured code, and professional criteria:
 
 ---
 
@@ -453,7 +453,7 @@ Key Points:
 1. Explicit Typing: In TypeScript, the formControls getter makes sure we access the form controls correctly with type safety.
 
 
-2. Bracket Notation: Since we don't use an index signature, Angular will allow the use of bracket notation (formControls['password']).
+2. Bracket Notation: Since we d on't use an index signature, Angular will allow the use of bracket notation (formControls['password']).
 
 
 3. Validation Messages: Display detailed validation messages based on whether the form control is touched and invalid.
@@ -464,4 +464,139 @@ Key Points:
 
 
 This should resolve the issue and allow you to properly handle form validation and submissions.
+
+
+
+
+
+
+The error message you're encountering indicates that the onSubmit() method is being referenced in the template (user-management.component.html), but it does not exist in the user-management.component.ts file.
+
+To fix this, you need to define the onSubmit() method in the UserManagementComponent class. This method should be responsible for handling the form submission logic.
+
+Here's the updated version of your user-management.component.ts file with the onSubmit() method:
+
+user-management.component.ts
+
+import { Component, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { UserService } from '../services/user.service';
+import { User } from '../models/user.model';
+
+@Component({
+  selector: 'app-user-management',
+  templateUrl: './user-management.component.html',
+  styleUrls: ['./user-management.component.css'],
+})
+export class UserManagementComponent implements OnInit {
+  userForm: FormGroup;
+  users: User[] = [];
+  isEditMode = false;
+
+  constructor(private fb: FormBuilder, private userService: UserService) {
+    this.userForm = this.fb.group({
+      id: [null], // Hidden field for edit mode
+      firstName: ['', [Validators.required, Validators.minLength(3)]],
+      lastName: ['', [Validators.required, Validators.minLength(3)]],
+      email: ['', [Validators.required, Validators.email]],
+      aadharId: [
+        '',
+        [Validators.required, Validators.pattern('^[0-9]{12}$')],
+      ],
+      phoneNumber: [
+        '',
+        [Validators.required, Validators.pattern('^[0-9]{10}$')],
+      ],
+      password: [
+        '',
+        [Validators.required, Validators.minLength(8)],
+      ],
+    });
+  }
+
+  ngOnInit(): void {
+    this.loadUsers();
+  }
+
+  loadUsers(): void {
+    this.userService.getUsers().subscribe({
+      next: (data) => (this.users = data),
+      error: (err) => console.error('Error fetching users:', err),
+    });
+  }
+
+  // onSubmit method for form submission
+  onSubmit(): void {
+    if (this.userForm.invalid) {
+      alert('Please fix validation errors!');
+      return;
+    }
+
+    const user: User = this.userForm.value;
+
+    if (this.isEditMode) {
+      this.userService.updateUser(user).subscribe(() => {
+        alert('User updated successfully!');
+        this.loadUsers();
+        this.resetForm();
+      });
+    } else {
+      this.userService.addUser(user).subscribe(() => {
+        alert('User added successfully!');
+        this.loadUsers();
+        this.resetForm();
+      });
+    }
+  }
+
+  editUser(user: User): void {
+    this.isEditMode = true;
+    this.userForm.patchValue(user);
+  }
+
+  deleteUser(userId: number): void {
+    if (confirm('Are you sure you want to delete this user?')) {
+      this.userService.deleteUser(userId).subscribe(() => {
+        alert('User deleted successfully!');
+        this.loadUsers();
+      });
+    }
+  }
+
+  resetForm(): void {
+    this.userForm.reset();
+    this.isEditMode = false;
+  }
+
+  // Accessor for validation
+  get formControls() {
+    return this.userForm.controls;
+  }
+}
+
+Changes made:
+
+1. Added the onSubmit() method: This method handles the form submission logic. It checks if the form is valid and either calls addUser() or updateUser() based on whether the form is in edit mode.
+
+
+2. Called the onSubmit() method in the template: The form will now trigger this method when the user submits the form.
+
+
+
+user-management.component.html (for reference)
+
+<form [formGroup]="userForm" (ngSubmit)="onSubmit()">
+  <input type="hidden" formControlName="id" />
+
+  <!-- Other form fields -->
+
+  <button type="submit" class="btn btn-primary mt-3">
+    {{ isEditMode ? 'Update' : 'Add' }} User
+  </button>
+</form>
+
+Now, the form submission will work correctly with the onSubmit() method handling the logic.
+
+Let me know if you need further assistance!
+
 
