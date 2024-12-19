@@ -584,3 +584,163 @@ Make sure to restart your development server (ng serve) after applying these cha
 
 
 
+
+
+
+
+The error occurs because Angular's ngClass directive and the ReactiveFormsModule required for form validation are not properly imported and configured in your project. Since you are using Angular 19 with standalone components, ensure that the necessary modules are explicitly imported in the component where they are used.
+
+Here's how to resolve the issue:
+
+
+---
+
+Fix for the Error
+
+1. Ensure ReactiveFormsModule and CommonModule are imported.
+Since you are using standalone components, include these in the imports section of your component.
+
+
+2. Update Your Standalone Component Configuration:
+
+
+
+import { Component, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule } from '@angular/forms';
+
+@Component({
+  selector: 'app-bill-generation',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule],
+  templateUrl: './bill-generation.component.html',
+  styleUrls: ['./bill-generation.component.css'],
+})
+export class BillGenerationComponent implements OnInit {
+  billForm!: FormGroup;
+
+  constructor(private fb: FormBuilder) {}
+
+  ngOnInit(): void {
+    this.billForm = this.fb.group({
+      customerId: ['', Validators.required],
+      billDate: ['', Validators.required],
+      dueDate: ['', Validators.required],
+      noOfUnits: ['', [Validators.required, Validators.min(1)]],
+      billAmount: ['', [Validators.required, Validators.min(0)]],
+    });
+  }
+
+  generateBill(): void {
+    if (this.billForm.invalid) {
+      return;
+    }
+    const billData = this.billForm.value;
+    console.log('Generated Bill:', billData);
+  }
+}
+
+
+---
+
+HTML Template Update
+
+<div class="container">
+  <h2>Generate Bill</h2>
+  <form [formGroup]="billForm" (ngSubmit)="generateBill()" class="form">
+    <div class="form-group">
+      <label for="customerId">Customer ID</label>
+      <input
+        id="customerId"
+        type="text"
+        formControlName="customerId"
+        class="form-control"
+        [ngClass]="{ 'is-invalid': billForm.get('customerId')?.invalid && billForm.get('customerId')?.touched }"
+      />
+      <div *ngIf="billForm.get('customerId')?.invalid && billForm.get('customerId')?.touched" class="text-danger">
+        Customer ID is required.
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="billDate">Bill Date</label>
+      <input
+        id="billDate"
+        type="date"
+        formControlName="billDate"
+        class="form-control"
+        [ngClass]="{ 'is-invalid': billForm.get('billDate')?.invalid && billForm.get('billDate')?.touched }"
+      />
+      <div *ngIf="billForm.get('billDate')?.invalid && billForm.get('billDate')?.touched" class="text-danger">
+        Bill Date is required.
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="dueDate">Due Date</label>
+      <input
+        id="dueDate"
+        type="date"
+        formControlName="dueDate"
+        class="form-control"
+        [ngClass]="{ 'is-invalid': billForm.get('dueDate')?.invalid && billForm.get('dueDate')?.touched }"
+      />
+      <div *ngIf="billForm.get('dueDate')?.invalid && billForm.get('dueDate')?.touched" class="text-danger">
+        Due Date is required.
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="noOfUnits">No of Units</label>
+      <input
+        id="noOfUnits"
+        type="number"
+        formControlName="noOfUnits"
+        class="form-control"
+        [ngClass]="{ 'is-invalid': billForm.get('noOfUnits')?.invalid && billForm.get('noOfUnits')?.touched }"
+      />
+      <div *ngIf="billForm.get('noOfUnits')?.invalid && billForm.get('noOfUnits')?.touched" class="text-danger">
+        Number of units is required and must be greater than 0.
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="billAmount">Bill Amount</label>
+      <input
+        id="billAmount"
+        type="number"
+        formControlName="billAmount"
+        class="form-control"
+        [ngClass]="{ 'is-invalid': billForm.get('billAmount')?.invalid && billForm.get('billAmount')?.touched }"
+      />
+      <div *ngIf="billForm.get('billAmount')?.invalid && billForm.get('billAmount')?.touched" class="text-danger">
+        Bill Amount is required and must be greater than or equal to 0.
+      </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary" [disabled]="billForm.invalid">Generate Bill</button>
+  </form>
+</div>
+
+
+---
+
+Key Points:
+
+1. ReactiveFormsModule is used for form validations and must be included in the imports array of the standalone component.
+
+
+2. CommonModule is also required for structural directives like *ngIf and *ngFor.
+
+
+3. Ensure that the class="form-control" and [ngClass] are styled appropriately in your CSS.
+
+
+
+If this still doesn't work, let me know!
+
+
+
+
+
