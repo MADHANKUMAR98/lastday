@@ -1,0 +1,55 @@
+import { Component } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule } from '@angular/forms';
+
+@Component({
+  standalone: true,
+  selector: 'app-bill-generation',
+  templateUrl: './bill-generation.component.html',
+  styleUrls: ['./bill-generation.component.css'],
+  imports: [CommonModule, ReactiveFormsModule], // Import CommonModule here
+})
+export class BillGenerationComponent {
+  billForm: FormGroup;
+
+  constructor(private fb: FormBuilder) {
+    this.billForm = this.fb.group({
+      customerId: ['', [Validators.required]],
+      billDate: ['', [Validators.required]],
+      dueDate: ['', [Validators.required]],
+      noOfUnits: ['', [Validators.required, Validators.pattern(/^\d+$/)]],
+      billAmount: ['', [Validators.required, Validators.pattern(/^\d+(\.\d{1,2})?$/)]],
+    });
+  }
+
+  onSubmit() {
+    if (this.billForm.valid) {
+      console.log('Bill Generated:', this.billForm.value);
+    } else {
+      console.error('Form is invalid');
+    }
+  }
+}
+
+
+
+<form [formGroup]="billForm" (ngSubmit)="onSubmit()" class="form-container">
+  <div class="form-group">
+    <label for="customerId">Customer ID</label>
+    <input
+      type="text"
+      id="customerId"
+      formControlName="customerId"
+      class="form-control"
+      [ngClass]="{ 'is-invalid': billForm.get('customerId')?.invalid && billForm.get('customerId')?.touched }"
+    />
+    <div *ngIf="billForm.get('customerId')?.invalid && billForm.get('customerId')?.touched" class="invalid-feedback">
+      Customer ID is required.
+    </div>
+  </div>
+
+  <!-- Add other fields similarly -->
+
+  <button type="submit" class="btn btn-primary" [disabled]="billForm.invalid">Generate Bill</button>
+</form>
