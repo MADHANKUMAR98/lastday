@@ -1,0 +1,292 @@
+Creating a complete, professional-level application involves a full-fledged backend in Spring Boot and a frontend in Angular 19 with dynamic routing, validations, styling, and responsive UI. Below, I provide the essential backend and frontend code.
+
+---
+
+### **Backend Code: Spring Boot**
+
+#### **1. Entity: `BillEnt`**
+
+```java
+package com.example.billingapp.entity;
+
+import jakarta.persistence.*;
+import java.time.LocalDate;
+
+@Entity
+@Table(name = "bills")
+public class BillEnt {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "bill_id")
+    private Long billId;
+
+    @Column(name = "customer_id", nullable = false)
+    private String customerId;
+
+    @Column(name = "bill_date", nullable = false)
+    private LocalDate billDate;
+
+    @Column(name = "due_date", nullable = false)
+    private LocalDate dueDate;
+
+    @Column(name = "no_of_units", nullable = false)
+    private Integer noOfUnits;
+
+    @Column(name = "bill_amount", nullable = false)
+    private Double billAmount;
+
+    @Column(name = "is_paid", nullable = false)
+    private boolean isPaid;
+
+    // Getters and Setters
+}
+```
+
+#### **2. Repository: `BillRep`**
+
+```java
+package com.example.billingapp.repository;
+
+import com.example.billingapp.entity.BillEnt;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.List;
+
+public interface BillRep extends JpaRepository<BillEnt, Long> {
+    List<BillEnt> findByCustomerId(String customerId);
+}
+```
+
+#### **3. Service Layer**
+
+```java
+package com.example.billingapp.service;
+
+import com.example.billingapp.entity.BillEnt;
+import com.example.billingapp.repository.BillRep;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+@Service
+public class BillService {
+
+    @Autowired
+    private BillRep billRep;
+
+    public BillEnt generateBill(BillEnt bill) {
+        return billRep.save(bill);
+    }
+
+    public List<BillEnt> getBillsByCustomerId(String customerId) {
+        return billRep.findByCustomerId(customerId);
+    }
+
+    public BillEnt updateBillAsPaid(Long billId) {
+        BillEnt bill = billRep.findById(billId).orElseThrow(() -> new RuntimeException("Bill not found"));
+        bill.setPaid(true);
+        return billRep.save(bill);
+    }
+}
+```
+
+#### **4. Controller**
+
+```java
+package com.example.billingapp.controller;
+
+import com.example.billingapp.entity.BillEnt;
+import com.example.billingapp.service.BillService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/bills")
+public class BillController {
+
+    @Autowired
+    private BillService billService;
+
+    @PostMapping("/generate")
+    public BillEnt generateBill(@RequestBody BillEnt bill) {
+        return billService.generateBill(bill);
+    }
+
+    @GetMapping("/customer/{customerId}")
+    public List<BillEnt> getBillsByCustomerId(@PathVariable String customerId) {
+        return billService.getBillsByCustomerId(customerId);
+    }
+
+    @PutMapping("/pay/{billId}")
+    public BillEnt payBill(@PathVariable Long billId) {
+        return billService.updateBillAsPaid(billId);
+    }
+}
+```
+
+---
+
+### **Frontend Code: Angular 19**
+
+#### **1. Bill Generation Component**
+
+##### **bill-generation.component.ts**
+
+```typescript
+import { Component, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
+
+@Component({
+  selector: 'app-bill-generation',
+  templateUrl: './bill-generation.component.html',
+  styleUrls: ['./bill-generation.component.css'],
+})
+export class BillGenerationComponent implements OnInit {
+  billForm: FormGroup;
+  bills: any[] = [];
+
+  constructor(private fb: FormBuilder, private http: HttpClient) {
+    this.billForm = this.fb.group({
+      customerId: ['', Validators.required],
+      billDate: ['', Validators.required],
+      dueDate: ['', Validators.required],
+      noOfUnits: ['', [Validators.required, Validators.min(1)]],
+      billAmount: ['', [Validators.required, Validators.min(0)]],
+    });
+  }
+
+  ngOnInit(): void {
+    this.loadBills();
+  }
+
+  generateBill(): void {
+    if (this.billForm.valid) {
+      this.http.post('/api/bills/generate', this.billForm.value).subscribe(() => {
+        this.billForm.reset();
+        this.loadBills();
+      });
+    }
+  }
+
+  loadBills(): void {
+    const customerId = sessionStorage.getItem('customerId');
+    if (customerId) {
+      this.http.get(`/api/bills/customer/${customerId}`).subscribe((data: any) => {
+        this.bills = data;
+      });
+    }
+  }
+}
+```
+
+##### **bill-generation.component.html**
+
+```html
+<div class="container">
+  <div class="form-section">
+    <h2>Generate Bill</h2>
+    <form [formGroup]="billForm" (ngSubmit)="generateBill()">
+      <div>
+        <label>Customer ID</label>
+        <input formControlName="customerId" type="text" />
+      </div>
+      <div>
+        <label>Bill Date</label>
+        <input formControlName="billDate" type="date" />
+      </div>
+      <div>
+        <label>Due Date</label>
+        <input formControlName="dueDate" type="date" />
+      </div>
+      <div>
+        <label>No. of Units</label>
+        <input formControlName="noOfUnits" type="number" />
+      </div>
+      <div>
+        <label>Bill Amount</label>
+        <input formControlName="billAmount" type="number" />
+      </div>
+      <button type="submit">Generate Bill</button>
+    </form>
+  </div>
+
+  <div class="table-section">
+    <h2>Previous Bills</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Bill ID</th>
+          <th>Bill Date</th>
+          <th>Due Date</th>
+          <th>Amount</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let bill of bills">
+          <td>{{ bill.billId }}</td>
+          <td>{{ bill.billDate }}</td>
+          <td>{{ bill.dueDate }}</td>
+          <td>{{ bill.billAmount }}</td>
+          <td>{{ bill.isPaid ? 'Paid' : 'Pending' }}</td>
+          <td>
+            <button *ngIf="!bill.isPaid" (click)="payBill(bill.billId)">Pay</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+```
+
+---
+
+#### **Styling: bill-generation.component.css**
+
+```css
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-section {
+  background-color: #f9f9f9;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.table-section {
+  margin-top: 20px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+table th, table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+}
+
+table th {
+  background-color: #f2f2f2;
+}
+```
+
+---
+
+This code handles the complete flow:
+1. Admin can generate bills.
+2. Users can view their bills, and pending bills are displayed with a "Pay" button.
+3. Users can pay bills with validation. 
+
+Would you like a ZIP file of the project or any further additions?
