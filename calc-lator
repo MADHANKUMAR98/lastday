@@ -1,0 +1,291 @@
+Here’s the implementation tailored for **Angular 19**, maintaining professional styling and ensuring all features and validations align with your requirements. 
+
+---
+
+### **1. Install Angular Material**
+Ensure Angular Material is installed in your project:
+
+```bash
+ng add @angular/material
+```
+
+---
+
+### **2. Unit Calculator Component**
+
+#### **TypeScript (unit-calculator.component.ts)**
+
+This component calculates the bill amount based on the units entered and is designed to open as a modal dialog.
+
+```typescript
+import { Component } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { MatDialogRef } from '@angular/material/dialog';
+
+@Component({
+  selector: 'app-unit-calculator',
+  templateUrl: './unit-calculator.component.html',
+  styleUrls: ['./unit-calculator.component.css'],
+})
+export class UnitCalculatorComponent {
+  unitForm: FormGroup;
+  submitted = false;
+  amount: number | null = null;
+
+  private ratePerUnit = 5.5; // Define your rate per unit here
+
+  constructor(
+    private fb: FormBuilder,
+    private dialogRef: MatDialogRef<UnitCalculatorComponent>
+  ) {
+    this.unitForm = this.fb.group({
+      units: [
+        '',
+        [
+          Validators.required,
+          Validators.min(1),
+          Validators.pattern(/^\d+$/), // Only positive integers
+        ],
+      ],
+    });
+  }
+
+  get f() {
+    return this.unitForm.controls;
+  }
+
+  onSubmit() {
+    this.submitted = true;
+
+    if (this.unitForm.invalid) {
+      return;
+    }
+
+    const units = this.unitForm.value.units;
+    this.amount = units * this.ratePerUnit;
+  }
+
+  closeDialog() {
+    this.dialogRef.close();
+  }
+}
+```
+
+---
+
+#### **HTML (unit-calculator.component.html)**
+
+A professional layout for the popup component with a close button and form validations.
+
+```html
+<div class="unit-calculator-container">
+  <button mat-icon-button class="close-button" (click)="closeDialog()">✖</button>
+  <h2>Electricity Bill Calculator</h2>
+
+  <form [formGroup]="unitForm" (ngSubmit)="onSubmit()">
+    <div class="form-group">
+      <label for="units">Enter Units:</label>
+      <input
+        id="units"
+        type="number"
+        formControlName="units"
+        [ngClass]="{ 'is-invalid': submitted && f.units?.invalid }"
+      />
+      <div *ngIf="submitted && f.units?.errors" class="error">
+        <small *ngIf="f.units?.errors?.['required']">Units are required.</small>
+        <small *ngIf="f.units?.errors?.['min']">Units must be at least 1.</small>
+        <small *ngIf="f.units?.errors?.['pattern']">
+          Units must be a valid number.
+        </small>
+      </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Calculate Amount</button>
+  </form>
+
+  <div *ngIf="amount !== null" class="result">
+    <h3>Total Amount: ₹{{ amount }}</h3>
+  </div>
+</div>
+```
+
+---
+
+#### **CSS (unit-calculator.component.css)**
+
+Style the component to look professional.
+
+```css
+.unit-calculator-container {
+  padding: 20px;
+  border-radius: 10px;
+  background-color: #ffffff;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+h2 {
+  text-align: center;
+  color: #333333;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+input {
+  width: 100%;
+  padding: 10px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+
+.error {
+  color: #e74c3c;
+  font-size: 12px;
+}
+
+button {
+  width: 100%;
+  padding: 10px;
+  border: none;
+  border-radius: 5px;
+  background-color: #007bff;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
+
+.result {
+  margin-top: 20px;
+  text-align: center;
+  color: #27ae60;
+}
+
+.close-button {
+  float: right;
+  font-size: 20px;
+  cursor: pointer;
+  color: #e74c3c;
+  background: none;
+  border: none;
+}
+```
+
+---
+
+### **3. Integrate with Homepage**
+
+#### **Homepage TypeScript (home.component.ts)**
+
+Use Angular Material Dialog to open the `UnitCalculatorComponent`.
+
+```typescript
+import { Component } from '@angular/core';
+import { MatDialog } from '@angular/material/dialog';
+import { UnitCalculatorComponent } from '../unit-calculator/unit-calculator.component';
+
+@Component({
+  selector: 'app-home',
+  templateUrl: './home.component.html',
+  styleUrls: ['./home.component.css'],
+})
+export class HomeComponent {
+  constructor(private dialog: MatDialog) {}
+
+  openUnitCalculator() {
+    this.dialog.open(UnitCalculatorComponent, {
+      width: '600px',
+      disableClose: true,
+    });
+  }
+}
+```
+
+---
+
+#### **Homepage HTML (home.component.html)**
+
+Include the trigger link or button in the homepage.
+
+```html
+<div class="homepage-container">
+  <h1>Welcome to the Electricity Billing System</h1>
+  <a (click)="openUnitCalculator()" class="popup-link">Calculate Bill</a>
+</div>
+```
+
+---
+
+#### **Homepage CSS (home.component.css)**
+
+Style the homepage for consistency.
+
+```css
+.homepage-container {
+  text-align: center;
+  padding: 50px;
+}
+
+h1 {
+  color: #007bff;
+}
+
+.popup-link {
+  text-decoration: none;
+  color: #007bff;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.popup-link:hover {
+  color: #0056b3;
+}
+```
+
+---
+
+### **4. Update App Module**
+
+Include Angular Material dependencies and register the components.
+
+#### **app.module.ts**
+
+```typescript
+import { NgModule } from '@angular/core';
+import { BrowserModule } from '@angular/platform-browser';
+import { ReactiveFormsModule } from '@angular/forms';
+import { MatDialogModule } from '@angular/material/dialog';
+import { MatButtonModule } from '@angular/material/button';
+
+import { AppComponent } from './app.component';
+import { HomeComponent } from './home/home.component';
+import { UnitCalculatorComponent } from './unit-calculator/unit-calculator.component';
+
+@NgModule({
+  declarations: [
+    AppComponent,
+    HomeComponent,
+    UnitCalculatorComponent,
+  ],
+  imports: [
+    BrowserModule,
+    ReactiveFormsModule,
+    MatDialogModule,
+    MatButtonModule,
+  ],
+  providers: [],
+  bootstrap: [AppComponent],
+})
+export class AppModule {}
+```
+
+---
+
+### **Summary**
+- The homepage includes a link styled as a button that opens a popup.
+- The popup contains the `UnitCalculatorComponent` where users can calculate their electricity bill.
+- All fields are validated, and the UI has a professional look with consistent styling.
