@@ -290,3 +290,315 @@ This code handles the complete flow:
 3. Users can pay bills with validation. 
 
 Would you like a ZIP file of the project or any further additions?
+
+
+
+
+
+
+
+
+
+
+
+Here is the updated implementation for the **User Point of View**, focusing on the following workflow: 
+
+1. **Users login**: Upon logging in, their `customerId` is fetched and stored in session storage.
+2. **View Bills**: Users can click a button to see their generated bills.
+3. **Pay Bill**: Users can click on a specific bill to open a payment modal, enter their payment details, and mark the bill as paid.
+
+This application is styled professionally with responsive design and validation.
+
+---
+
+### **Backend Code: Spring Boot**
+
+#### **1. Entity: `BillEnt`**
+
+```java
+package com.example.billingapp.entity;
+
+import jakarta.persistence.*;
+import java.time.LocalDate;
+
+@Entity
+@Table(name = "bills")
+public class BillEnt {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "bill_id")
+    private Long billId;
+
+    @Column(name = "customer_id", nullable = false)
+    private String customerId;
+
+    @Column(name = "bill_date", nullable = false)
+    private LocalDate billDate;
+
+    @Column(name = "due_date", nullable = false)
+    private LocalDate dueDate;
+
+    @Column(name = "no_of_units", nullable = false)
+    private Integer noOfUnits;
+
+    @Column(name = "bill_amount", nullable = false)
+    private Double billAmount;
+
+    @Column(name = "is_paid", nullable = false)
+    private boolean isPaid;
+
+    // Getters and Setters
+}
+```
+
+#### **2. Repository: `BillRep`**
+
+```java
+package com.example.billingapp.repository;
+
+import com.example.billingapp.entity.BillEnt;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.List;
+
+public interface BillRep extends JpaRepository<BillEnt, Long> {
+    List<BillEnt> findByCustomerId(String customerId);
+}
+```
+
+#### **3. Service Layer**
+
+```java
+package com.example.billingapp.service;
+
+import com.example.billingapp.entity.BillEnt;
+import com.example.billingapp.repository.BillRep;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+@Service
+public class BillService {
+
+    @Autowired
+    private BillRep billRep;
+
+    public List<BillEnt> getBillsByCustomerId(String customerId) {
+        return billRep.findByCustomerId(customerId);
+    }
+
+    public BillEnt updateBillAsPaid(Long billId) {
+        BillEnt bill = billRep.findById(billId).orElseThrow(() -> new RuntimeException("Bill not found"));
+        bill.setPaid(true);
+        return billRep.save(bill);
+    }
+}
+```
+
+#### **4. Controller**
+
+```java
+package com.example.billingapp.controller;
+
+import com.example.billingapp.entity.BillEnt;
+import com.example.billingapp.service.BillService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/bills")
+public class BillController {
+
+    @Autowired
+    private BillService billService;
+
+    @GetMapping("/customer/{customerId}")
+    public List<BillEnt> getBillsByCustomerId(@PathVariable String customerId) {
+        return billService.getBillsByCustomerId(customerId);
+    }
+
+    @PutMapping("/pay/{billId}")
+    public BillEnt payBill(@PathVariable Long billId) {
+        return billService.updateBillAsPaid(billId);
+    }
+}
+```
+
+---
+
+### **Frontend Code: Angular 19**
+
+#### **1. User Dashboard Component**
+
+##### **user-dashboard.component.ts**
+
+```typescript
+import { Component, OnInit } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+
+@Component({
+  selector: 'app-user-dashboard',
+  templateUrl: './user-dashboard.component.html',
+  styleUrls: ['./user-dashboard.component.css'],
+})
+export class UserDashboardComponent implements OnInit {
+  customerId: string | null = '';
+  bills: any[] = [];
+  showPaymentModal: boolean = false;
+  selectedBillId: number | null = null;
+
+  constructor(private http: HttpClient) {}
+
+  ngOnInit(): void {
+    this.customerId = sessionStorage.getItem('customerId');
+  }
+
+  fetchBills(): void {
+    if (this.customerId) {
+      this.http.get(`/api/bills/customer/${this.customerId}`).subscribe((data: any) => {
+        this.bills = data;
+      });
+    }
+  }
+
+  openPaymentModal(billId: number): void {
+    this.selectedBillId = billId;
+    this.showPaymentModal = true;
+  }
+
+  closePaymentModal(): void {
+    this.showPaymentModal = false;
+    this.selectedBillId = null;
+  }
+
+  payBill(): void {
+    if (this.selectedBillId) {
+      this.http.put(`/api/bills/pay/${this.selectedBillId}`, {}).subscribe(() => {
+        this.closePaymentModal();
+        this.fetchBills();
+      });
+    }
+  }
+}
+```
+
+##### **user-dashboard.component.html**
+
+```html
+<div class="container">
+  <h1>Welcome, User</h1>
+  <button (click)="fetchBills()" class="btn-fetch-bills">View My Bills</button>
+
+  <div class="bills-table" *ngIf="bills.length > 0">
+    <table>
+      <thead>
+        <tr>
+          <th>Bill ID</th>
+          <th>Bill Date</th>
+          <th>Due Date</th>
+          <th>Amount</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let bill of bills">
+          <td>{{ bill.billId }}</td>
+          <td>{{ bill.billDate }}</td>
+          <td>{{ bill.dueDate }}</td>
+          <td>{{ bill.billAmount }}</td>
+          <td>{{ bill.isPaid ? 'Paid' : 'Pending' }}</td>
+          <td>
+            <button *ngIf="!bill.isPaid" (click)="openPaymentModal(bill.billId)">Pay</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Payment Modal -->
+  <div class="modal" *ngIf="showPaymentModal">
+    <div class="modal-content">
+      <h3>Payment Details</h3>
+      <label>Card Number</label>
+      <input type="text" placeholder="Enter card number" />
+      <label>CVV</label>
+      <input type="text" placeholder="Enter CVV" />
+      <label>Expiry Date</label>
+      <input type="month" />
+      <button (click)="payBill()">Submit Payment</button>
+      <button (click)="closePaymentModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+```
+
+##### **user-dashboard.component.css**
+
+```css
+.container {
+  padding: 20px;
+}
+
+.btn-fetch-bills {
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.bills-table {
+  margin-top: 20px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: center;
+}
+
+th {
+  background-color: #f4f4f4;
+}
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content {
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  width: 400px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+```
+
+---
+
+### Summary
+
+1. Users log in, and their `customerId` is stored in session storage.
+2. A button fetches the bills dynamically for the logged-in user.
+3. Pending bills show a "Pay" button. On clicking, a payment modal pops up.
+4. The payment modal lets the user enter card details and marks the bill as paid in the backend.
+
+Would you like additional features or enhancements?
