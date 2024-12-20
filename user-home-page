@@ -1,0 +1,237 @@
+To create a **User Bill View** that adheres to the format of the provided **Admin Bill Generation**, we can adjust the functionality and UI to display bills specifically tied to the logged-in user. Here's the implementation:
+
+---
+
+### **1. User Bill Component**
+
+#### **TypeScript (user-bills.component.ts)**
+
+```typescript
+import { Component, OnInit } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+
+@Component({
+  selector: 'app-user-bills',
+  templateUrl: './user-bills.component.html',
+  styleUrls: ['./user-bills.component.css'],
+})
+export class UserBillsComponent implements OnInit {
+  bills: any[] = []; // To store fetched bills
+  userId: string = sessionStorage.getItem('userId') || ''; // Fetch user ID from session storage
+  paymentForm!: FormGroup; // Form for marking bills as paid
+
+  constructor(private http: HttpClient, private fb: FormBuilder) {}
+
+  ngOnInit(): void {
+    this.fetchGeneratedBills(); // Fetch bills on component load
+
+    // Initialize form for marking payment
+    this.paymentForm = this.fb.group({
+      billId: ['', Validators.required],
+      paymentDate: [new Date().toISOString().split('T')[0], Validators.required],
+    });
+  }
+
+  // Fetch bills for the logged-in user
+  fetchGeneratedBills() {
+    this.http
+      .get<any[]>(`http://localhost:8080/api/bills/${this.userId}`)
+      .subscribe(
+        (response) => {
+          this.bills = response;
+        },
+        (error) => {
+          console.error('Error fetching bills:', error);
+        }
+      );
+  }
+
+  // Mark a bill as paid
+  markAsPaid() {
+    const billId = this.paymentForm.value.billId;
+    const paymentDate = this.paymentForm.value.paymentDate;
+
+    this.http
+      .put(`http://localhost:8080/api/bills/markAsPaid/${billId}`, { paymentDate })
+      .subscribe(
+        () => {
+          alert('Bill marked as paid successfully.');
+          this.fetchGeneratedBills(); // Refresh the bill list
+        },
+        (error) => {
+          console.error('Error marking bill as paid:', error);
+        }
+      );
+  }
+}
+```
+
+---
+
+#### **HTML (user-bills.component.html)**
+
+```html
+<div class="container">
+  <!-- Generated Bills Section -->
+  <div class="grid-section mt-5">
+    <h3>Generated Bills</h3>
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>Bill ID</th>
+          <th>Bill Date</th>
+          <th>Due Date</th>
+          <th>No. of Units</th>
+          <th>Bill Amount</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let bill of bills">
+          <td>{{ bill.billId }}</td>
+          <td>{{ bill.billDate }}</td>
+          <td>{{ bill.dueDate }}</td>
+          <td>{{ bill.noOfUnits }}</td>
+          <td>₹{{ bill.billAmount }}</td>
+          <td>{{ bill.status }}</td>
+          <td>
+            <button
+              class="btn btn-success btn-sm"
+              *ngIf="bill.status === 'Pending'"
+              (click)="paymentForm.patchValue({ billId: bill.billId })"
+              data-bs-toggle="modal"
+              data-bs-target="#paymentModal"
+            >
+              Mark as Paid
+            </button>
+          </td>
+        </tr>
+        <tr *ngIf="bills.length === 0">
+          <td colspan="7" class="text-center">No bills found.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Payment Modal -->
+  <div
+    class="modal fade"
+    id="paymentModal"
+    tabindex="-1"
+    aria-labelledby="paymentModalLabel"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="paymentModalLabel">Mark Bill as Paid</h5>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+          ></button>
+        </div>
+        <form [formGroup]="paymentForm" (ngSubmit)="markAsPaid()">
+          <div class="modal-body">
+            <div class="form-group">
+              <label for="billId">Bill ID</label>
+              <input
+                type="text"
+                id="billId"
+                formControlName="billId"
+                class="form-control"
+                readonly
+              />
+            </div>
+            <div class="form-group">
+              <label for="paymentDate">Payment Date</label>
+              <input
+                type="date"
+                id="paymentDate"
+                formControlName="paymentDate"
+                class="form-control"
+              />
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <button type="submit" class="btn btn-primary" [disabled]="paymentForm.invalid">Submit Payment</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+```
+
+---
+
+#### **CSS (user-bills.component.css)**
+
+```css
+.container {
+  padding: 20px;
+}
+
+.grid-section {
+  margin-top: 20px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 10px;
+  text-align: left;
+}
+
+th {
+  background-color: #007bff;
+  color: white;
+}
+
+td {
+  border-bottom: 1px solid #ddd;
+}
+
+button {
+  margin-top: 5px;
+}
+```
+
+---
+
+### **Key Features**
+
+1. **Fetch Generated Bills**:
+   - The bills are fetched based on the `userId` stored in the session.
+
+2. **Mark as Paid**:
+   - The user can select a pending bill and mark it as paid via a modal form.
+   - Backend endpoint: `PUT /api/bills/markAsPaid/{billId}`.
+
+3. **Professional Styling**:
+   - Uses a clean and responsive table layout.
+   - Includes a Bootstrap modal for marking payments.
+
+4. **Validations**:
+   - The `billId` field in the modal is readonly.
+   - The payment date field is pre-filled with the current date.
+
+---
+
+### **API Endpoints**
+
+Ensure the backend has the following APIs:
+
+- **Fetch Bills**: `GET /api/bills/{userId}`
+- **Mark Bill as Paid**: `PUT /api/bills/markAsPaid/{billId}` (Request body includes payment date).
+
+---
+
+This implementation aligns with the admin bill generation format while tailoring it to a user's specific requirements.
