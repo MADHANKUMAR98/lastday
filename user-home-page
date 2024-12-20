@@ -235,3 +235,470 @@ Ensure the backend has the following APIs:
 ---
 
 This implementation aligns with the admin bill generation format while tailoring it to a user's specific requirements.
+
+
+
+
+
+Here’s the complete solution for the **User Home Page** with a **Navbar** and components like **Unit Bill Calculator**, **Generated Bills**, and **Payment History** integrated with backend functionality.
+
+### **1. Home Page Component**
+
+#### **TypeScript (home.component.ts)**
+
+```typescript
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-home',
+  templateUrl: './home.component.html',
+  styleUrls: ['./home.component.css'],
+})
+export class HomeComponent {}
+```
+
+#### **HTML (home.component.html)**
+
+```html
+<div class="container">
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <a class="navbar-brand" href="#">Electricity Billing System</a>
+    <button
+      class="navbar-toggler"
+      type="button"
+      data-bs-toggle="collapse"
+      data-bs-target="#navbarNav"
+      aria-controls="navbarNav"
+      aria-expanded="false"
+      aria-label="Toggle navigation"
+    >
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="#" (click)="showUnitsBillCalculator()">Units Bill Calculator</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#" (click)="showGeneratedBills()">Generated Bills</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#" (click)="showPaymentHistory()">Payment History</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#" (click)="logout()">Logout</a>
+        </li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Units Bill Calculator Component -->
+  <app-units-bill-calculator *ngIf="currentComponent === 'unitsBillCalculator'"></app-units-bill-calculator>
+
+  <!-- Generated Bills Component -->
+  <app-user-bills *ngIf="currentComponent === 'generatedBills'"></app-user-bills>
+
+  <!-- Payment History Component -->
+  <app-payment-history *ngIf="currentComponent === 'paymentHistory'"></app-payment-history>
+</div>
+```
+
+#### **CSS (home.component.css)**
+
+```css
+.navbar {
+  margin-bottom: 30px;
+}
+
+.container {
+  padding: 20px;
+}
+```
+
+#### **TypeScript (home.component.ts) Explanation**:
+- The **navbar** allows users to navigate between components.
+- `showUnitsBillCalculator()`, `showGeneratedBills()`, `showPaymentHistory()` are used to display respective components.
+- The component to be displayed is controlled by the `currentComponent` variable.
+
+### **2. Units Bill Calculator Component**
+
+#### **TypeScript (units-bill-calculator.component.ts)**
+
+```typescript
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-units-bill-calculator',
+  templateUrl: './units-bill-calculator.component.html',
+  styleUrls: ['./units-bill-calculator.component.css'],
+})
+export class UnitsBillCalculatorComponent {
+  units: number = 0;
+  ratePerUnit: number = 5; // Example rate per unit
+  calculatedBill: number = 0;
+
+  calculateBill() {
+    this.calculatedBill = this.units * this.ratePerUnit;
+  }
+}
+```
+
+#### **HTML (units-bill-calculator.component.html)**
+
+```html
+<div class="calculator">
+  <h3>Units Bill Calculator</h3>
+  <div class="form-group">
+    <label for="units">Enter No. of Units:</label>
+    <input
+      type="number"
+      id="units"
+      class="form-control"
+      [(ngModel)]="units"
+      (input)="calculateBill()"
+    />
+  </div>
+
+  <div class="result">
+    <p><strong>Bill Amount:</strong> ₹{{ calculatedBill }}</p>
+  </div>
+</div>
+```
+
+#### **CSS (units-bill-calculator.component.css)**
+
+```css
+.calculator {
+  background-color: #f9f9f9;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.result {
+  margin-top: 15px;
+  font-size: 18px;
+}
+```
+
+### **3. User Bills Component**
+
+#### **TypeScript (user-bills.component.ts)**
+
+```typescript
+import { Component, OnInit } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+
+@Component({
+  selector: 'app-user-bills',
+  templateUrl: './user-bills.component.html',
+  styleUrls: ['./user-bills.component.css'],
+})
+export class UserBillsComponent implements OnInit {
+  bills: any[] = [];
+  userId: string = sessionStorage.getItem('userId') || '';
+  paymentForm!: FormGroup;
+
+  constructor(private http: HttpClient, private fb: FormBuilder) {}
+
+  ngOnInit(): void {
+    this.fetchGeneratedBills();
+    this.paymentForm = this.fb.group({
+      billId: ['', Validators.required],
+      paymentDate: [new Date().toISOString().split('T')[0], Validators.required],
+    });
+  }
+
+  fetchGeneratedBills() {
+    this.http
+      .get<any[]>(`http://localhost:8080/api/bills/${this.userId}`)
+      .subscribe((response) => {
+        this.bills = response;
+      });
+  }
+
+  markAsPaid() {
+    const billId = this.paymentForm.value.billId;
+    const paymentDate = this.paymentForm.value.paymentDate;
+    this.http
+      .put(`http://localhost:8080/api/bills/markAsPaid/${billId}`, { paymentDate })
+      .subscribe(() => {
+        alert('Bill marked as paid');
+        this.fetchGeneratedBills();
+      });
+  }
+}
+```
+
+#### **HTML (user-bills.component.html)**
+
+```html
+<div class="container">
+  <h3>Generated Bills</h3>
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>Bill ID</th>
+        <th>Bill Date</th>
+        <th>Due Date</th>
+        <th>No. of Units</th>
+        <th>Bill Amount</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let bill of bills">
+        <td>{{ bill.billId }}</td>
+        <td>{{ bill.billDate }}</td>
+        <td>{{ bill.dueDate }}</td>
+        <td>{{ bill.noOfUnits }}</td>
+        <td>₹{{ bill.billAmount }}</td>
+        <td>{{ bill.status }}</td>
+        <td>
+          <button
+            class="btn btn-success"
+            *ngIf="bill.status === 'Pending'"
+            (click)="paymentForm.patchValue({ billId: bill.billId })"
+            data-bs-toggle="modal"
+            data-bs-target="#paymentModal"
+          >
+            Mark as Paid
+          </button>
+        </td>
+      </tr>
+      <tr *ngIf="bills.length === 0">
+        <td colspan="7" class="text-center">No bills found.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Payment Modal -->
+  <div
+    class="modal fade"
+    id="paymentModal"
+    tabindex="-1"
+    aria-labelledby="paymentModalLabel"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="paymentModalLabel">Mark Bill as Paid</h5>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+          ></button>
+        </div>
+        <form [formGroup]="paymentForm" (ngSubmit)="markAsPaid()">
+          <div class="modal-body">
+            <div class="form-group">
+              <label for="billId">Bill ID</label>
+              <input
+                type="text"
+                id="billId"
+                formControlName="billId"
+                class="form-control"
+                readonly
+              />
+            </div>
+            <div class="form-group">
+              <label for="paymentDate">Payment Date</label>
+              <input
+                type="date"
+                id="paymentDate"
+                formControlName="paymentDate"
+                class="form-control"
+              />
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <button type="submit" class="btn btn-primary" [disabled]="paymentForm.invalid">Submit Payment</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+```
+
+#### **CSS (user-bills.component.css)**
+
+```css
+.table {
+  width: 100%;
+}
+
+th, td {
+  padding: 10px;
+  text-align: left;
+}
+
+button {
+  margin-top: 5px;
+}
+```
+
+### **4. Payment History Component**
+
+#### **TypeScript (payment-history.component.ts)**
+
+```typescript
+import { Component, OnInit } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+
+@Component({
+  selector: 'app-payment-history',
+  templateUrl: './
+
+Certainly! Here's the continuation of the **Payment History Component**:
+
+### **4. Payment History Component**
+
+#### **TypeScript (payment-history.component.ts)**
+
+```typescript
+import { Component, OnInit } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+
+@Component({
+  selector: 'app-payment-history',
+  templateUrl: './payment-history.component.html',
+  styleUrls: ['./payment-history.component.css'],
+})
+export class PaymentHistoryComponent implements OnInit {
+  paymentHistory: any[] = [];
+  userId: string = sessionStorage.getItem('userId') || '';
+
+  constructor(private http: HttpClient) {}
+
+  ngOnInit(): void {
+    this.fetchPaymentHistory();
+  }
+
+  fetchPaymentHistory() {
+    this.http
+      .get<any[]>(`http://localhost:8080/api/payments/${this.userId}`)
+      .subscribe((response) => {
+        this.paymentHistory = response;
+      });
+  }
+}
+```
+
+#### **HTML (payment-history.component.html)**
+
+```html
+<div class="container">
+  <h3>Payment History</h3>
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>Payment ID</th>
+        <th>Bill ID</th>
+        <th>Amount Paid</th>
+        <th>Payment Date</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let payment of paymentHistory">
+        <td>{{ payment.paymentId }}</td>
+        <td>{{ payment.billId }}</td>
+        <td>₹{{ payment.amountPaid }}</td>
+        <td>{{ payment.paymentDate }}</td>
+        <td>{{ payment.status }}</td>
+      </tr>
+      <tr *ngIf="paymentHistory.length === 0">
+        <td colspan="5" class="text-center">No payments found.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+```
+
+#### **CSS (payment-history.component.css)**
+
+```css
+.table {
+  width: 100%;
+}
+
+th, td {
+  padding: 10px;
+  text-align: left;
+}
+
+button {
+  margin-top: 5px;
+}
+```
+
+---
+
+### **Backend Integration**
+
+For backend integration, you need REST APIs to fetch bills, mark bills as paid, and fetch the payment history.
+
+1. **Bills API (GET, PUT)**: 
+   - `GET /api/bills/{userId}` to fetch the bills for a user.
+   - `PUT /api/bills/markAsPaid/{billId}` to mark a bill as paid.
+
+2. **Payments API (GET)**: 
+   - `GET /api/payments/{userId}` to fetch payment history.
+
+Make sure the backend is properly connected to the Angular frontend using **HttpClient** for API calls.
+
+---
+
+### **AppModule Setup**
+
+Ensure the following imports are in your **app.module.ts**:
+
+```typescript
+import { NgModule } from '@angular/core';
+import { BrowserModule } from '@angular/platform-browser';
+import { ReactiveFormsModule } from '@angular/forms';
+import { HttpClientModule } from '@angular/common/http';
+import { AppComponent } from './app.component';
+import { HomeComponent } from './home/home.component';
+import { UnitsBillCalculatorComponent } from './units-bill-calculator/units-bill-calculator.component';
+import { UserBillsComponent } from './user-bills/user-bills.component';
+import { PaymentHistoryComponent } from './payment-history/payment-history.component';
+
+@NgModule({
+  declarations: [
+    AppComponent,
+    HomeComponent,
+    UnitsBillCalculatorComponent,
+    UserBillsComponent,
+    PaymentHistoryComponent
+  ],
+  imports: [
+    BrowserModule,
+    ReactiveFormsModule,
+    HttpClientModule
+  ],
+  providers: [],
+  bootstrap: [AppComponent]
+})
+export class AppModule {}
+```
+
+### **Conclusion**
+
+This setup creates a full-fledged **User Home Page** with a **Navbar** and the following components:
+1. **Units Bill Calculator**: Calculate the bill based on units entered by the user.
+2. **Generated Bills**: List bills generated for the user, and mark them as paid.
+3. **Payment History**: View the payment history of the user.
+
+Each component is connected to the backend for fetching data and marking bills as paid. The UI is designed with professional styling using **Bootstrap** for responsive layout and forms.
