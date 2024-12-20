@@ -289,3 +289,36 @@ export class AppModule {}
 - The homepage includes a link styled as a button that opens a popup.
 - The popup contains the `UnitCalculatorComponent` where users can calculate their electricity bill.
 - All fields are validated, and the UI has a professional look with consistent styling.
+
+
+<div class="unit-calculator-container">
+  <button mat-icon-button class="close-button" (click)="closeDialog()">✖</button>
+  <h2>Electricity Bill Calculator</h2>
+
+  <form [formGroup]="unitForm" (ngSubmit)="onSubmit()">
+    <div class="form-group">
+      <label for="units">Enter Units:</label>
+      <input
+        id="units"
+        type="number"
+        formControlName="units"
+        [ngClass]="{ 'is-invalid': submitted && f['units']?.invalid }"
+      />
+      <div *ngIf="submitted && f['units']?.errors" class="error">
+        <small *ngIf="f['units']?.errors?.['required']">
+          Units are required.
+        </small>
+        <small *ngIf="f['units']?.errors?.['min']">Units must be at least 1.</small>
+        <small *ngIf="f['units']?.errors?.['pattern']">
+          Units must be a valid number.
+        </small>
+      </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Calculate Amount</button>
+  </form>
+
+  <div *ngIf="amount !== null" class="result">
+    <h3>Total Amount: ₹{{ amount }}</h3>
+  </div>
+</div>
