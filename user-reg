@@ -499,3 +499,25 @@ button:disabled {
 ---
 
 This HTML and CSS work together to provide a responsive, professional-looking user registration form with clear error messages and feedback. Let me know if you need further adjustments or additional features!
+
+
+
+
+
+<form [formGroup]="userForm" (ngSubmit)="onSubmit()">
+  <div>
+    <label for="email">Email:</label>
+    <input
+      id="email"
+      type="email"
+      formControlName="email"
+      [ngClass]="{ 'is-invalid': submitted && f.email?.invalid }"
+    />
+    <div *ngIf="submitted && f.email?.errors" class="error">
+      <small *ngIf="f.email?.errors?.required">Email is required.</small>
+      <small *ngIf="f.email?.errors?.email">Invalid Email Address.</small>
+    </div>
+  </div>
+
+  <button type="submit">Submit</button>
+</form>
