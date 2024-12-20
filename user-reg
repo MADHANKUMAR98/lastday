@@ -1,0 +1,501 @@
+Here is the full Angular code for a user registration form that sends data to the backend using an API endpoint. It includes:
+
+- **Form validation**.
+- **Service to handle API calls**.
+- **A professional UI**.
+- **Success/Error handling when sending data to the backend**.
+
+---
+
+### **1. Angular Setup**
+
+Ensure your Angular app has the necessary dependencies:
+```bash
+npm install @angular/forms @angular/common rxjs --save
+```
+
+---
+
+### **2. Backend API Endpoint**
+
+Assume the backend API is listening on `http://localhost:8080/api/users/register` and accepts `POST` requests with the user object.
+
+---
+
+### **3. Angular Code**
+
+#### **Service to Handle API Calls**
+
+##### **user.service.ts**
+
+```typescript
+import { Injectable } from '@angular/core';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Observable } from 'rxjs';
+
+@Injectable({
+  providedIn: 'root',
+})
+export class UserService {
+  private apiUrl = 'http://localhost:8080/api/users/register';
+
+  constructor(private http: HttpClient) {}
+
+  registerUser(user: any): Observable<any> {
+    const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
+    return this.http.post(this.apiUrl, user, { headers });
+  }
+}
+```
+
+---
+
+#### **User Registration Component**
+
+##### **user-registration.component.ts**
+
+```typescript
+import { Component } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { UserService } from '../services/user.service';
+
+@Component({
+  selector: 'app-user-registration',
+  templateUrl: './user-registration.component.html',
+  styleUrls: ['./user-registration.component.css'],
+})
+export class UserRegistrationComponent {
+  userForm: FormGroup;
+  submitted = false;
+  loading = false;
+  successMessage = '';
+  errorMessage = '';
+
+  constructor(private fb: FormBuilder, private userService: UserService) {
+    this.userForm = this.fb.group({
+      userId: ['', [Validators.required, Validators.pattern(/^[a-zA-Z0-9]+$/)]],
+      firstName: ['', [Validators.required, Validators.minLength(2)]],
+      lastName: ['', [Validators.required, Validators.minLength(2)]],
+      aadharId: ['', [Validators.required, Validators.pattern(/^\d{12}$/)]],
+      password: ['', [Validators.required, Validators.minLength(6)]],
+      phoneNumber: ['', [Validators.required, Validators.pattern(/^\d{10}$/)]],
+      email: ['', [Validators.required, Validators.email]],
+    });
+  }
+
+  // Accessor for form controls
+  get f() {
+    return this.userForm.controls;
+  }
+
+  onSubmit(): void {
+    this.submitted = true;
+    this.successMessage = '';
+    this.errorMessage = '';
+
+    if (this.userForm.invalid) {
+      return;
+    }
+
+    this.loading = true;
+    this.userService.registerUser(this.userForm.value).subscribe({
+      next: (response) => {
+        this.successMessage = 'User registered successfully!';
+        this.userForm.reset();
+        this.submitted = false;
+      },
+      error: (error) => {
+        this.errorMessage = 'Registration failed. Please try again later.';
+      },
+      complete: () => {
+        this.loading = false;
+      },
+    });
+  }
+}
+```
+
+---
+
+##### **user-registration.component.html**
+
+```html
+<div class="container">
+  <h1>User Registration</h1>
+
+  <form [formGroup]="userForm" (ngSubmit)="onSubmit()" novalidate>
+    <div class="form-group">
+      <label for="userId">User ID</label>
+      <input id="userId" type="text" formControlName="userId" class="form-control" />
+      <div *ngIf="submitted && f.userId.errors" class="error">
+        <small *ngIf="f.userId.errors.required">User ID is required.</small>
+        <small *ngIf="f.userId.errors.pattern">Only alphanumeric characters are allowed.</small>
+      </div>
+    </div>
+
+    <!-- Repeat similar structure for other fields -->
+
+    <button type="submit" class="btn btn-primary" [disabled]="loading">
+      {{ loading ? 'Registering...' : 'Register' }}
+    </button>
+  </form>
+
+  <div *ngIf="successMessage" class="alert alert-success mt-3">
+    {{ successMessage }}
+  </div>
+  <div *ngIf="errorMessage" class="alert alert-danger mt-3">
+    {{ errorMessage }}
+  </div>
+</div>
+```
+
+---
+
+##### **user-registration.component.css**
+
+```css
+.container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+label {
+  font-weight: bold;
+}
+
+input {
+  width: 100%;
+  padding: 10px;
+  margin-top: 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.error {
+  color: red;
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+button {
+  padding: 10px 15px;
+  margin-right: 10px;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+button.btn-primary {
+  background-color: #007bff;
+  color: white;
+}
+
+.alert {
+  padding: 10px;
+  margin-top: 10px;
+  border-radius: 4px;
+}
+
+.alert-success {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.alert-danger {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+```
+
+---
+
+#### **App Module**
+
+Ensure the `HttpClientModule` is imported in your app module:
+
+##### **app.module.ts**
+
+```typescript
+import { NgModule } from '@angular/core';
+import { BrowserModule } from '@angular/platform-browser';
+import { ReactiveFormsModule } from '@angular/forms';
+import { HttpClientModule } from '@angular/common/http';
+
+import { AppComponent } from './app.component';
+import { UserRegistrationComponent } from './user-registration/user-registration.component';
+
+@NgModule({
+  declarations: [AppComponent, UserRegistrationComponent],
+  imports: [BrowserModule, ReactiveFormsModule, HttpClientModule],
+  providers: [],
+  bootstrap: [AppComponent],
+})
+export class AppModule {}
+```
+
+---
+
+### **Flow**
+
+1. **Form Submission**:
+   - The `onSubmit()` method sends the form data to the backend via the `UserService`.
+2. **Validation**:
+   - Validates form fields with real-time error messages.
+3. **Success/Error Message**:
+   - Displays appropriate messages based on the API response.
+4. **Professional Styling**:
+   - Provides a clean and modern UI.
+
+Would you like the backend code for this setup?
+
+
+Here’s the full HTML code for the **User Registration Form**. This version uses a professional, responsive design with a clean and modern user interface, ensuring it looks appealing and user-friendly.
+
+---
+
+### **HTML Code: `user-registration.component.html`**
+
+```html
+<div class="container">
+  <h1 class="title">User Registration</h1>
+
+  <form [formGroup]="userForm" (ngSubmit)="onSubmit()" novalidate>
+    <!-- User ID Field -->
+    <div class="form-group">
+      <label for="userId">User ID</label>
+      <input
+        id="userId"
+        type="text"
+        formControlName="userId"
+        class="form-control"
+        placeholder="Enter your User ID"
+      />
+      <div *ngIf="submitted && f.userId.errors" class="error">
+        <small *ngIf="f.userId.errors.required">User ID is required.</small>
+        <small *ngIf="f.userId.errors.pattern">Only alphanumeric characters are allowed.</small>
+      </div>
+    </div>
+
+    <!-- First Name Field -->
+    <div class="form-group">
+      <label for="firstName">First Name</label>
+      <input
+        id="firstName"
+        type="text"
+        formControlName="firstName"
+        class="form-control"
+        placeholder="Enter your First Name"
+      />
+      <div *ngIf="submitted && f.firstName.errors" class="error">
+        <small *ngIf="f.firstName.errors.required">First Name is required.</small>
+        <small *ngIf="f.firstName.errors.minlength">
+          First Name must be at least 2 characters long.
+        </small>
+      </div>
+    </div>
+
+    <!-- Last Name Field -->
+    <div class="form-group">
+      <label for="lastName">Last Name</label>
+      <input
+        id="lastName"
+        type="text"
+        formControlName="lastName"
+        class="form-control"
+        placeholder="Enter your Last Name"
+      />
+      <div *ngIf="submitted && f.lastName.errors" class="error">
+        <small *ngIf="f.lastName.errors.required">Last Name is required.</small>
+        <small *ngIf="f.lastName.errors.minlength">
+          Last Name must be at least 2 characters long.
+        </small>
+      </div>
+    </div>
+
+    <!-- Aadhar ID Field -->
+    <div class="form-group">
+      <label for="aadharId">Aadhar ID</label>
+      <input
+        id="aadharId"
+        type="text"
+        formControlName="aadharId"
+        class="form-control"
+        placeholder="Enter your 12-digit Aadhar ID"
+      />
+      <div *ngIf="submitted && f.aadharId.errors" class="error">
+        <small *ngIf="f.aadharId.errors.required">Aadhar ID is required.</small>
+        <small *ngIf="f.aadharId.errors.pattern">Aadhar ID must be 12 digits.</small>
+      </div>
+    </div>
+
+    <!-- Password Field -->
+    <div class="form-group">
+      <label for="password">Password</label>
+      <input
+        id="password"
+        type="password"
+        formControlName="password"
+        class="form-control"
+        placeholder="Enter your Password"
+      />
+      <div *ngIf="submitted && f.password.errors" class="error">
+        <small *ngIf="f.password.errors.required">Password is required.</small>
+        <small *ngIf="f.password.errors.minlength">
+          Password must be at least 6 characters long.
+        </small>
+      </div>
+    </div>
+
+    <!-- Phone Number Field -->
+    <div class="form-group">
+      <label for="phoneNumber">Phone Number</label>
+      <input
+        id="phoneNumber"
+        type="text"
+        formControlName="phoneNumber"
+        class="form-control"
+        placeholder="Enter your 10-digit Phone Number"
+      />
+      <div *ngIf="submitted && f.phoneNumber.errors" class="error">
+        <small *ngIf="f.phoneNumber.errors.required">Phone Number is required.</small>
+        <small *ngIf="f.phoneNumber.errors.pattern">Phone Number must be 10 digits.</small>
+      </div>
+    </div>
+
+    <!-- Email Field -->
+    <div class="form-group">
+      <label for="email">Email</label>
+      <input
+        id="email"
+        type="email"
+        formControlName="email"
+        class="form-control"
+        placeholder="Enter your Email Address"
+      />
+      <div *ngIf="submitted && f.email.errors" class="error">
+        <small *ngIf="f.email.errors.required">Email is required.</small>
+        <small *ngIf="f.email.errors.email">Invalid Email Address.</small>
+      </div>
+    </div>
+
+    <!-- Submit Button -->
+    <div class="form-group">
+      <button type="submit" class="btn btn-primary" [disabled]="loading">
+        {{ loading ? 'Submitting...' : 'Register' }}
+      </button>
+    </div>
+  </form>
+
+  <!-- Success/Error Messages -->
+  <div *ngIf="successMessage" class="alert alert-success">
+    {{ successMessage }}
+  </div>
+  <div *ngIf="errorMessage" class="alert alert-danger">
+    {{ errorMessage }}
+  </div>
+</div>
+```
+
+---
+
+### **Styling (CSS)**
+
+#### **user-registration.component.css**
+
+```css
+.container {
+  max-width: 600px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.title {
+  text-align: center;
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+  color: #333;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+label {
+  display: block;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+  color: #555;
+}
+
+input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+input:focus {
+  border-color: #007bff;
+  outline: none;
+  box-shadow: 0 0 4px rgba(0, 123, 255, 0.5);
+}
+
+button {
+  padding: 0.7rem 1.5rem;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+button:disabled {
+  background-color: #ccc;
+}
+
+.error {
+  color: red;
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+}
+
+.alert {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.alert-success {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.alert-danger {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+```
+
+---
+
+This HTML and CSS work together to provide a responsive, professional-looking user registration form with clear error messages and feedback. Let me know if you need further adjustments or additional features!
