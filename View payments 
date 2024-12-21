@@ -1,0 +1,497 @@
+Here’s how you can implement the admin view in Angular with a more professional styling approach, using Angular Material and SCSS for a polished UI.
+
+
+---
+
+1. Install Angular Material
+
+Run the following command to install Angular Material:
+
+ng add @angular/material
+
+Choose a prebuilt theme (e.g., Indigo/Pink) and allow the CLI to set up global styles.
+
+
+---
+
+2. Updated Angular Service (bill.service.ts)
+
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+
+@Injectable({
+  providedIn: 'root',
+})
+export class BillService {
+  private baseUrl = 'http://localhost:8080/admin';
+
+  constructor(private http: HttpClient) {}
+
+  getPaidBills(): Observable<any> {
+    return this.http.get(`${this.baseUrl}/paid-bills`);
+  }
+}
+
+
+---
+
+3. Create the Admin View Component
+
+Component File (admin-view.component.ts)
+
+import { Component, OnInit } from '@angular/core';
+import { BillService } from '../services/bill.service';
+
+@Component({
+  selector: 'app-admin-view',
+  templateUrl: './admin-view.component.html',
+  styleUrls: ['./admin-view.component.scss'],
+})
+export class AdminViewComponent implements OnInit {
+  paidBills: any[] = [];
+  displayedColumns: string[] = ['billId', 'customerId', 'billDate', 'dueDate', 'noOfUnits', 'billAmount'];
+
+  constructor(private billService: BillService) {}
+
+  ngOnInit(): void {
+    this.billService.getPaidBills().subscribe((data) => {
+      this.paidBills = data;
+    });
+  }
+}
+
+
+---
+
+Template File (admin-view.component.html)
+
+Using Angular Material's table and cards for a modern UI.
+
+<div class="admin-view">
+  <h1>Paid Bills</h1>
+  <mat-card>
+    <mat-table [dataSource]="paidBills" class="mat-elevation-z8">
+      <!-- Bill ID Column -->
+      <ng-container matColumnDef="billId">
+        <mat-header-cell *matHeaderCellDef> Bill ID </mat-header-cell>
+        <mat-cell *matCellDef="let bill"> {{ bill.billId }} </mat-cell>
+      </ng-container>
+
+      <!-- Customer ID Column -->
+      <ng-container matColumnDef="customerId">
+        <mat-header-cell *matHeaderCellDef> Customer ID </mat-header-cell>
+        <mat-cell *matCellDef="let bill"> {{ bill.customerId }} </mat-cell>
+      </ng-container>
+
+      <!-- Bill Date Column -->
+      <ng-container matColumnDef="billDate">
+        <mat-header-cell *matHeaderCellDef> Bill Date </mat-header-cell>
+        <mat-cell *matCellDef="let bill"> {{ bill.billDate | date }} </mat-cell>
+      </ng-container>
+
+      <!-- Due Date Column -->
+      <ng-container matColumnDef="dueDate">
+        <mat-header-cell *matHeaderCellDef> Due Date </mat-header-cell>
+        <mat-cell *matCellDef="let bill"> {{ bill.dueDate | date }} </mat-cell>
+      </ng-container>
+
+      <!-- No. of Units Column -->
+      <ng-container matColumnDef="noOfUnits">
+        <mat-header-cell *matHeaderCellDef> Units </mat-header-cell>
+        <mat-cell *matCellDef="let bill"> {{ bill.noOfUnits }} </mat-cell>
+      </ng-container>
+
+      <!-- Bill Amount Column -->
+      <ng-container matColumnDef="billAmount">
+        <mat-header-cell *matHeaderCellDef> Amount </mat-header-cell>
+        <mat-cell *matCellDef="let bill"> {{ bill.billAmount | currency }} </mat-cell>
+      </ng-container>
+
+      <!-- Table Header -->
+      <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+      <!-- Table Rows -->
+      <mat-row *matRowDef="let row; columns: displayedColumns"></mat-row>
+    </mat-table>
+  </mat-card>
+</div>
+
+
+---
+
+SCSS File (admin-view.component.scss)
+
+Use SCSS to create a clean and modern design.
+
+.admin-view {
+  h1 {
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 2.2rem;
+    color: #3f51b5;
+  }
+
+  mat-card {
+    margin: 20px auto;
+    padding: 20px;
+    max-width: 80%;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+
+    .mat-table {
+      width: 100%;
+    }
+
+    mat-header-cell {
+      font-weight: bold;
+      text-transform: uppercase;
+      color: #ffffff;
+      background-color: #3f51b5;
+      padding: 16px;
+    }
+
+    mat-cell {
+      padding: 16px;
+    }
+
+    mat-row:nth-child(odd) {
+      background-color: #f5f5f5;
+    }
+  }
+}
+
+
+---
+
+4. Module Imports (app.module.ts)
+
+Ensure you have the required Angular Material modules imported:
+
+import { NgModule } from '@angular/core';
+import { BrowserModule } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { HttpClientModule } from '@angular/common/http';
+import { MatTableModule } from '@angular/material/table';
+import { MatCardModule } from '@angular/material/card';
+
+@NgModule({
+  declarations: [AdminViewComponent],
+  imports: [
+    BrowserModule,
+    BrowserAnimationsModule,
+    HttpClientModule,
+    MatTableModule,
+    MatCardModule,
+  ],
+  providers: [],
+  bootstrap: [AdminViewComponent],
+})
+export class AppModule {}
+
+
+---
+
+5. Output Example
+
+When the admin views the page, the bills table will have:
+
+Clean headings with a consistent color theme.
+
+Properly formatted dates.
+
+Currency formatting for bill amounts.
+
+Alternating row colors for better readability.
+
+
+
+---
+
+6. Example Data
+
+Ensure your backend returns the data in the following format:
+
+[
+  {
+    "billId": 1,
+    "customerId": "CUST001",
+    "billDate": "2024-12-01",
+    "dueDate": "2024-12-10",
+    "noOfUnits": 120,
+    "billAmount": 240.5,
+    "isPaid": true
+  },
+  {
+    "billId": 2,
+    "customerId": "CUST002",
+    "billDate": "2024-12-05",
+    "dueDate": "2024-12-15",
+    "noOfUnits": 100,
+    "billAmount": 200,
+    "isPaid": true
+  }
+]
+
+
+---
+
+Conclusion
+
+This implementation uses Angular Material for styling, SCSS for a professional look, and a responsive design. Let me know if you need further refinements!
+
+
+
+To implement a feature where the admin can view the details of customers who have paid their bills, you can follow these steps. Below is the code for the entity, repository, service, and controller.
+
+
+---
+
+1. Bill Entity
+
+import jakarta.persistence.*;
+import java.time.LocalDate;
+
+@Entity
+@Table(name = "EBS_Bills")
+public class Bill {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "bill_id")
+    private Long billId;
+
+    @Column(name = "customer_id", nullable = false)
+    private String customerId;
+
+    @Column(name = "bill_date", nullable = false)
+    private LocalDate billDate;
+
+    @Column(name = "due_date", nullable = false)
+    private LocalDate dueDate;
+
+    @Column(name = "no_of_units", nullable = false)
+    private Integer noOfUnits;
+
+    @Column(name = "bill_amount", nullable = false)
+    private Double billAmount;
+
+    @Column(name = "is_paid", nullable = false)
+    private boolean isPaid;
+
+    // Getters and Setters
+    public Long getBillId() {
+        return billId;
+    }
+
+    public void setBillId(Long billId) {
+        this.billId = billId;
+    }
+
+    public String getCustomerId() {
+        return customerId;
+    }
+
+    public void setCustomerId(String customerId) {
+        this.customerId = customerId;
+    }
+
+    public LocalDate getBillDate() {
+        return billDate;
+    }
+
+    public void setBillDate(LocalDate billDate) {
+        this.billDate = billDate;
+    }
+
+    public LocalDate getDueDate() {
+        return dueDate;
+    }
+
+    public void setDueDate(LocalDate dueDate) {
+        this.dueDate = dueDate;
+    }
+
+    public Integer getNoOfUnits() {
+        return noOfUnits;
+    }
+
+    public void setNoOfUnits(Integer noOfUnits) {
+        this.noOfUnits = noOfUnits;
+    }
+
+    public Double getBillAmount() {
+        return billAmount;
+    }
+
+    public void setBillAmount(Double billAmount) {
+        this.billAmount = billAmount;
+    }
+
+    public boolean isPaid() {
+        return isPaid;
+    }
+
+    public void setPaid(boolean isPaid) {
+        this.isPaid = isPaid;
+    }
+}
+
+
+---
+
+2. Bill Repository
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+
+@Repository
+public interface BillRepository extends JpaRepository<Bill, Long> {
+    List<Bill> findByIsPaidTrue();
+}
+
+
+---
+
+3. Bill Service
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+@Service
+public class BillService {
+
+    @Autowired
+    private BillRepository billRepository;
+
+    public List<Bill> getPaidBills() {
+        return billRepository.findByIsPaidTrue();
+    }
+}
+
+
+---
+
+4. Bill Controller
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/admin")
+public class BillController {
+
+    @Autowired
+    private BillService billService;
+
+    @GetMapping("/paid-bills")
+    public ResponseEntity<List<Bill>> getPaidBills() {
+        List<Bill> paidBills = billService.getPaidBills();
+        return ResponseEntity.ok(paidBills);
+    }
+}
+
+
+---
+
+5. Routing in Angular
+
+Here’s an example to display the list of paid bills in an Angular component.
+
+Angular Service (bill.service.ts)
+
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+
+@Injectable({
+  providedIn: 'root',
+})
+export class BillService {
+  private baseUrl = 'http://localhost:8080/admin';
+
+  constructor(private http: HttpClient) {}
+
+  getPaidBills(): Observable<any> {
+    return this.http.get(`${this.baseUrl}/paid-bills`);
+  }
+}
+
+Angular Component (admin-view.component.ts)
+
+import { Component, OnInit } from '@angular/core';
+import { BillService } from '../services/bill.service';
+
+@Component({
+  selector: 'app-admin-view',
+  templateUrl: './admin-view.component.html',
+  styleUrls: ['./admin-view.component.css'],
+})
+export class AdminViewComponent implements OnInit {
+  paidBills: any[] = [];
+
+  constructor(private billService: BillService) {}
+
+  ngOnInit(): void {
+    this.billService.getPaidBills().subscribe((data) => {
+      this.paidBills = data;
+    });
+  }
+}
+
+Angular Template (admin-view.component.html)
+
+<h2>Paid Bills</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Bill ID</th>
+      <th>Customer ID</th>
+      <th>Bill Date</th>
+      <th>Due Date</th>
+      <th>No. of Units</th>
+      <th>Bill Amount</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let bill of paidBills">
+      <td>{{ bill.billId }}</td>
+      <td>{{ bill.customerId }}</td>
+      <td>{{ bill.billDate }}</td>
+      <td>{{ bill.dueDate }}</td>
+      <td>{{ bill.noOfUnits }}</td>
+      <td>{{ bill.billAmount }}</td>
+    </tr>
+  </tbody>
+</table>
+
+
+---
+
+Summary
+
+1. The Bill entity defines the schema for storing bill details.
+
+
+2. The repository includes a query method (findByIsPaidTrue) to fetch paid bills.
+
+
+3. The service calls the repository and processes the data.
+
+
+4. The controller exposes the endpoint /admin/paid-bills to fetch the data.
+
+
+5. The Angular app consumes this API and displays the data in a tabular format.
+
+
+
+Let me know if you need further assistance!
+
