@@ -1,0 +1,249 @@
+To segregate bills by `customerId`, we will modify the code so that the admin or user can filter bills by entering or selecting a specific `customerId`. Here's how you can update both the frontend and backend code to implement this functionality.
+
+---
+
+### **Backend Code**
+
+#### **1. Update Controller**
+
+Add an endpoint to fetch bills by `customerId`.
+
+**`BillController.java`**
+```java
+@RestController
+@RequestMapping("/api/bills")
+public class BillController {
+    @Autowired
+    private BillService billService;
+
+    @GetMapping("/customer/{customerId}")
+    public ResponseEntity<List<Billent>> getBillsByCustomerId(@PathVariable String customerId) {
+        List<Billent> bills = billService.getBillsByCustomerId(customerId);
+        if (bills.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(bills);
+    }
+
+    @PutMapping("/{billId}/pay")
+    public ResponseEntity<String> markBillAsPaid(@PathVariable Long billId) {
+        boolean isUpdated = billService.markBillAsPaid(billId);
+        if (isUpdated) {
+            return ResponseEntity.ok("Bill marked as paid.");
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Bill not found.");
+    }
+}
+```
+
+#### **2. Update Service**
+
+Add logic to fetch bills by `customerId`.
+
+**`BillService.java`**
+```java
+@Service
+public class BillService {
+    @Autowired
+    private BillRepository billRepository;
+
+    public List<Billent> getBillsByCustomerId(String customerId) {
+        return billRepository.findByCustomerId(customerId);
+    }
+
+    public boolean markBillAsPaid(Long billId) {
+        Optional<Billent> billOpt = billRepository.findById(billId);
+        if (billOpt.isPresent()) {
+            Billent bill = billOpt.get();
+            bill.setPaid(true);
+            billRepository.save(bill);
+            return true;
+        }
+        return false;
+    }
+}
+```
+
+#### **3. Update Repository**
+
+Add a query to find bills by `customerId`.
+
+**`BillRepository.java`**
+```java
+@Repository
+public interface BillRepository extends JpaRepository<Billent, Long> {
+    List<Billent> findByCustomerId(String customerId);
+}
+```
+
+---
+
+### **Frontend Code**
+
+#### **1. Bill Payment Component**
+
+Update the component to allow filtering bills by `customerId` and displaying the results.
+
+**`bill-payment.component.ts`**
+```typescript
+import { Component } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { BillService } from '../services/bill.service';
+
+@Component({
+  selector: 'app-bill-payment',
+  templateUrl: './bill-payment.component.html',
+  styleUrls: ['./bill-payment.component.css'],
+})
+export class BillPaymentComponent {
+  customerForm: FormGroup;
+  billForm: FormGroup;
+  bills: any[] = [];
+  message: string = '';
+  isLoading: boolean = false;
+
+  constructor(private fb: FormBuilder, private billService: BillService) {
+    this.customerForm = this.fb.group({
+      customerId: ['', Validators.required],
+    });
+
+    this.billForm = this.fb.group({
+      billId: ['', [Validators.required, Validators.pattern('^[0-9]*$')]],
+    });
+  }
+
+  get f() {
+    return this.billForm.controls;
+  }
+
+  getBills() {
+    if (this.customerForm.valid) {
+      const customerId = this.customerForm.value.customerId;
+      this.isLoading = true;
+
+      this.billService.getBillsByCustomerId(customerId).subscribe({
+        next: (response) => {
+          this.bills = response;
+          this.isLoading = false;
+          this.message = '';
+        },
+        error: () => {
+          this.bills = [];
+          this.message = 'No bills found for this customer.';
+          this.isLoading = false;
+        },
+      });
+    }
+  }
+
+  payBill() {
+    if (this.billForm.valid) {
+      this.isLoading = true;
+      const billId = this.billForm.value.billId;
+
+      this.billService.markAsPaid(billId).subscribe({
+        next: () => {
+          this.message = `Bill with ID ${billId} marked as paid successfully!`;
+          this.getBills(); // Refresh the bill list
+          this.isLoading = false;
+          this.billForm.reset();
+        },
+        error: () => {
+          this.message = `Error: Unable to mark the bill as paid.`;
+          this.isLoading = false;
+        },
+      });
+    }
+  }
+}
+```
+
+---
+
+#### **2. HTML Template**
+
+Update the template to include a customer search and a dynamic bill list.
+
+**`bill-payment.component.html`**
+```html
+<div class="bill-payment-container mat-elevation-z8">
+  <h2 class="title">Pay Bill</h2>
+
+  <!-- Customer Search -->
+  <form [formGroup]="customerForm" (ngSubmit)="getBills()" class="customer-form">
+    <mat-form-field appearance="outline" class="form-field">
+      <mat-label>Customer ID</mat-label>
+      <input matInput formControlName="customerId" placeholder="Enter Customer ID" />
+      <mat-error *ngIf="customerForm.controls['customerId'].hasError('required')">
+        Customer ID is required
+      </mat-error>
+    </mat-form-field>
+
+    <button mat-raised-button color="primary" type="submit" [disabled]="customerForm.invalid || isLoading">
+      {{ isLoading ? 'Searching...' : 'Search Bills' }}
+    </button>
+  </form>
+
+  <!-- Bill List -->
+  <mat-card *ngIf="bills.length > 0" class="bill-list">
+    <h3>Bills for Customer</h3>
+    <table mat-table [dataSource]="bills" class="mat-elevation-z8">
+      <ng-container matColumnDef="billId">
+        <th mat-header-cell *matHeaderCellDef> Bill ID </th>
+        <td mat-cell *matCellDef="let bill"> {{ bill.billId }} </td>
+      </ng-container>
+
+      <ng-container matColumnDef="billAmount">
+        <th mat-header-cell *matHeaderCellDef> Amount </th>
+        <td mat-cell *matCellDef="let bill"> {{ bill.billAmount | currency }} </td>
+      </ng-container>
+
+      <ng-container matColumnDef="dueDate">
+        <th mat-header-cell *matHeaderCellDef> Due Date </th>
+        <td mat-cell *matCellDef="let bill"> {{ bill.dueDate | date }} </td>
+      </ng-container>
+
+      <ng-container matColumnDef="isPaid">
+        <th mat-header-cell *matHeaderCellDef> Paid </th>
+        <td mat-cell *matCellDef="let bill"> {{ bill.isPaid ? 'Yes' : 'No' }} </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="['billId', 'billAmount', 'dueDate', 'isPaid']"></tr>
+      <tr mat-row *matRowDef="let row; columns: ['billId', 'billAmount', 'dueDate', 'isPaid']"></tr>
+    </table>
+  </mat-card>
+
+  <!-- Pay Bill Form -->
+  <form [formGroup]="billForm" (ngSubmit)="payBill()" class="bill-form">
+    <mat-form-field appearance="outline" class="form-field">
+      <mat-label>Bill ID</mat-label>
+      <input matInput type="text" formControlName="billId" placeholder="Enter Bill ID" />
+      <mat-error *ngIf="f['billId'].hasError('required')"> Bill ID is required </mat-error>
+      <mat-error *ngIf="f['billId'].hasError('pattern')"> Bill ID must be a valid number </mat-error>
+    </mat-form-field>
+
+    <button mat-raised-button color="primary" type="submit" [disabled]="billForm.invalid || isLoading">
+      {{ isLoading ? 'Processing...' : 'Pay Now' }}
+    </button>
+  </form>
+
+  <mat-card *ngIf="message" class="message-card">
+    {{ message }}
+  </mat-card>
+</div>
+```
+
+---
+
+### Summary of Changes
+
+1. **Backend**: 
+   - Added an endpoint to fetch bills by `customerId`.
+   - Reused the existing `markAsPaid` endpoint.
+
+2. **Frontend**:
+   - Added a customer search feature.
+   - Displayed bills dynamically in a Material table.
+   - Updated the `payBill` method to refresh the bill list after payment. 
+
+This provides a professional and user-friendly experience for filtering and paying bills.
