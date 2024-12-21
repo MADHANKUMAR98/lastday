@@ -239,3 +239,294 @@ Features and Enhancements
 
 This implementation ensures a premium and informative experience for users while promoting energy-saving habits.
 
+
+
+
+Below is a complete Angular code example for fetching data (electricity facts and weekly usage) from a backend API and displaying it in a professional, interactive front-end application.
+
+
+---
+
+Project Setup
+
+1. Install Angular CLI if not already installed:
+
+npm install -g @angular/cli
+
+
+2. Create a new Angular project:
+
+ng new electricity-dashboard
+
+
+3. Navigate to the project directory:
+
+cd electricity-dashboard
+
+
+4. Add Angular Material for UI components:
+
+ng add @angular/material
+
+
+
+
+---
+
+Step 1: Create a Service for Data Fetching
+
+Generate a service to handle API requests:
+
+ng generate service services/electricity
+
+electricity.service.ts
+
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+
+@Injectable({
+  providedIn: 'root',
+})
+export class ElectricityService {
+  private baseUrl = 'http://localhost:8080/api/electricity'; // Update with your backend URL
+
+  constructor(private http: HttpClient) {}
+
+  getElectricityFacts(): Observable<string[]> {
+    return this.http.get<string[]>(`${this.baseUrl}/facts`);
+  }
+
+  getWeeklyUsage(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/usage`);
+  }
+}
+
+
+---
+
+Step 2: Create a Component to Display Data
+
+Generate a new component for the home page:
+
+ng generate component components/home
+
+home.component.ts
+
+import { Component, OnInit } from '@angular/core';
+import { ElectricityService } from '../../services/electricity.service';
+
+@Component({
+  selector: 'app-home',
+  templateUrl: './home.component.html',
+  styleUrls: ['./home.component.css'],
+})
+export class HomeComponent implements OnInit {
+  facts: string[] = [];
+  usageData: any[] = [];
+  isLoading: boolean = true;
+
+  constructor(private electricityService: ElectricityService) {}
+
+  ngOnInit(): void {
+    this.fetchElectricityFacts();
+    this.fetchWeeklyUsage();
+  }
+
+  fetchElectricityFacts(): void {
+    this.electricityService.getElectricityFacts().subscribe(
+      (data) => {
+        this.facts = data;
+        this.isLoading = false;
+      },
+      (error) => {
+        console.error('Error fetching electricity facts:', error);
+      }
+    );
+  }
+
+  fetchWeeklyUsage(): void {
+    this.electricityService.getWeeklyUsage().subscribe(
+      (data) => {
+        this.usageData = data;
+        this.isLoading = false;
+      },
+      (error) => {
+        console.error('Error fetching weekly usage data:', error);
+      }
+    );
+  }
+}
+
+
+---
+
+Step 3: Define HTML Template
+
+home.component.html
+
+<div class="home-container">
+  <header class="header">
+    <h1 class="title">Electricity Dashboard</h1>
+    <p class="subtitle">Monitor your electricity usage and explore insights</p>
+  </header>
+
+  <section *ngIf="isLoading" class="loading-section">
+    <p>Loading data, please wait...</p>
+  </section>
+
+  <!-- Electricity Facts -->
+  <section *ngIf="!isLoading" class="facts-section">
+    <h2>Electricity Facts</h2>
+    <ul class="facts-list">
+      <li *ngFor="let fact of facts">{{ fact }}</li>
+    </ul>
+  </section>
+
+  <!-- Weekly Usage -->
+  <section *ngIf="!isLoading" class="usage-section">
+    <h2>Weekly Electricity Usage</h2>
+    <div class="usage-graph">
+      <div
+        *ngFor="let data of usageData"
+        class="usage-bar"
+        [style.height]="data.usage * 5 + 'px'"
+      >
+        <span class="usage-label">{{ data.day }}</span>
+        <span class="usage-value">{{ data.usage }} kWh</span>
+      </div>
+    </div>
+  </section>
+</div>
+
+
+---
+
+Step 4: Add Styling
+
+home.component.css
+
+body {
+  margin: 0;
+  font-family: 'Roboto', sans-serif;
+  background: linear-gradient(to right, #f6d365, #fda085);
+  color: #333;
+}
+
+.header {
+  text-align: center;
+  padding: 2rem;
+  background: #282c34;
+  color: white;
+}
+
+.title {
+  font-size: 2.5rem;
+}
+
+.subtitle {
+  font-size: 1.2rem;
+  margin-top: 0.5rem;
+}
+
+.facts-section, .usage-section {
+  margin: 2rem;
+}
+
+.facts-list {
+  list-style: none;
+  padding: 0;
+}
+
+.facts-list li {
+  background: white;
+  margin: 0.5rem 0;
+  padding: 1rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.usage-graph {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  height: 200px;
+}
+
+.usage-bar {
+  width: 50px;
+  background: #007bff;
+  text-align: center;
+  color: white;
+  position: relative;
+}
+
+.usage-label {
+  position: absolute;
+  bottom: -20px;
+  font-size: 0.8rem;
+}
+
+.usage-value {
+  position: absolute;
+  top: -20px;
+  font-size: 0.8rem;
+}
+
+
+---
+
+Step 5: Enable HTTP Client
+
+Import the HttpClientModule in your app module:
+app.module.ts
+
+import { NgModule } from '@angular/core';
+import { BrowserModule } from '@angular/platform-browser';
+import { HttpClientModule } from '@angular/common/http';
+import { AppRoutingModule } from './app-routing.module';
+import { AppComponent } from './app.component';
+import { HomeComponent } from './components/home/home.component';
+
+@NgModule({
+  declarations: [AppComponent, HomeComponent],
+  imports: [BrowserModule, AppRoutingModule, HttpClientModule],
+  providers: [],
+  bootstrap: [AppComponent],
+})
+export class AppModule {}
+
+
+---
+
+Backend API Setup
+
+Ensure your backend API (http://localhost:8080/api/electricity) provides endpoints for:
+
+1. /facts: Returns an array of strings.
+
+
+2. /usage: Returns an array of objects, each with day and usage properties.
+
+
+
+
+---
+
+Run the Project
+
+1. Start the Angular app:
+
+ng serve
+
+
+2. Navigate to http://localhost:4200 in your browser.
+
+
+
+
+---
+
+This implementation will fetch electricity facts and usage data dynamically, displaying them on a professionally styled home page.
+
+
