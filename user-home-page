@@ -702,3 +702,216 @@ This setup creates a full-fledged **User Home Page** with a **Navbar** and the f
 3. **Payment History**: View the payment history of the user.
 
 Each component is connected to the backend for fetching data and marking bills as paid. The UI is designed with professional styling using **Bootstrap** for responsive layout and forms.
+
+
+
+
+
+
+
+
+
+Here’s how you can implement the `markAsPaid` functionality in your backend using a REST API in Java (Spring Boot).
+
+---
+
+### **Backend Code**
+
+#### **BillController.java**
+```java
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/bills")
+public class BillController {
+
+    @Autowired
+    private BillService billService;
+
+    @PutMapping("/{billId}/mark-as-paid")
+    public ResponseEntity<String> markAsPaid(@PathVariable Long billId) {
+        try {
+            billService.markAsPaid(billId);
+            return ResponseEntity.ok("Bill marked as paid successfully.");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+}
+```
+
+---
+
+#### **BillService.java**
+```java
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+public class BillService {
+
+    @Autowired
+    private BillRepository billRepository;
+
+    @Transactional
+    public void markAsPaid(Long billId) {
+        Bill bill = billRepository.findById(billId)
+                .orElseThrow(() -> new IllegalArgumentException("Bill not found with ID: " + billId));
+        
+        if (bill.isPaid()) {
+            throw new IllegalArgumentException("The bill is already marked as paid.");
+        }
+        
+        bill.setPaid(true);
+        billRepository.save(bill);
+    }
+}
+```
+
+---
+
+#### **BillRepository.java**
+```java
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface BillRepository extends JpaRepository<Bill, Long> {
+}
+```
+
+---
+
+#### **Bill.java (Entity)**
+```java
+import jakarta.persistence.*;
+import java.time.LocalDate;
+
+@Entity
+@Table(name = "bills")
+public class Bill {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "bill_id")
+    private Long billId;
+
+    @Column(name = "customer_id", nullable = false)
+    private String customerId;
+
+    @Column(name = "bill_date", nullable = false)
+    private LocalDate billDate;
+
+    @Column(name = "due_amount", nullable = false)
+    private Double dueAmount;
+
+    @Column(name = "no_of_units", nullable = false)
+    private Integer noOfUnits;
+
+    @Column(name = "bill_amount", nullable = false)
+    private Double billAmount;
+
+    @Column(name = "is_paid", nullable = false)
+    private boolean isPaid;
+
+    // Getters and setters
+    public Long getBillId() {
+        return billId;
+    }
+
+    public void setBillId(Long billId) {
+        this.billId = billId;
+    }
+
+    public String getCustomerId() {
+        return customerId;
+    }
+
+    public void setCustomerId(String customerId) {
+        this.customerId = customerId;
+    }
+
+    public LocalDate getBillDate() {
+        return billDate;
+    }
+
+    public void setBillDate(LocalDate billDate) {
+        this.billDate = billDate;
+    }
+
+    public Double getDueAmount() {
+        return dueAmount;
+    }
+
+    public void setDueAmount(Double dueAmount) {
+        this.dueAmount = dueAmount;
+    }
+
+    public Integer getNoOfUnits() {
+        return noOfUnits;
+    }
+
+    public void setNoOfUnits(Integer noOfUnits) {
+        this.noOfUnits = noOfUnits;
+    }
+
+    public Double getBillAmount() {
+        return billAmount;
+    }
+
+    public void setBillAmount(Double billAmount) {
+        this.billAmount = billAmount;
+    }
+
+    public boolean isPaid() {
+        return isPaid;
+    }
+
+    public void setPaid(boolean paid) {
+        isPaid = paid;
+    }
+}
+```
+
+---
+
+### **Steps**
+
+1. **API Endpoint**:  
+   The endpoint `/api/bills/{billId}/mark-as-paid` handles the `PUT` request to mark a bill as paid.
+
+2. **Validation**:  
+   - Checks if the bill exists in the database.
+   - Ensures the bill is not already marked as paid.
+
+3. **Database Update**:  
+   Marks the `is_paid` field as `true` and updates the database.
+
+---
+
+### **Example API Request**
+
+#### Request:
+```http
+PUT /api/bills/1/mark-as-paid
+```
+
+#### Response (Success):
+```json
+{
+  "message": "Bill marked as paid successfully."
+}
+```
+
+#### Response (Error - Bill Not Found):
+```json
+{
+  "message": "Bill not found with ID: 1"
+}
+```
+
+#### Response (Error - Already Paid):
+```json
+{
+  "message": "The bill is already marked as
