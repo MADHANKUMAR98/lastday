@@ -917,3 +917,275 @@ th {
 ---
 
 This implementation integrates frontend and backend seamlessly. Let me know if you need further modifications!
+
+
+To include the **Customer ID** in both the backend and frontend, allowing identification of the customer who paid a particular bill, we need to add customer-related functionality. Here's the complete implementation:
+
+---
+
+### **Backend Code**
+
+#### **1. Update Entity Classes**
+
+##### **Bill.java**
+Add a reference to the **Customer ID**:
+```java
+import jakarta.persistence.*;
+
+@Entity
+@Table(name = "EBS_Bill")
+public class Bill {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long billId;
+
+    @Temporal(TemporalType.DATE)
+    private Date billDate;
+
+    @Temporal(TemporalType.DATE)
+    private Date dueDate;
+
+    private double billAmount;
+
+    private boolean isPaid;
+
+    private Long customerId; // Added Customer ID
+
+    // Getters and Setters
+    public Long getCustomerId() {
+        return customerId;
+    }
+
+    public void setCustomerId(Long customerId) {
+        this.customerId = customerId;
+    }
+}
+```
+
+---
+
+##### **Payment.java**
+Include a **Customer ID** for linking:
+```java
+import jakarta.persistence.*;
+
+@Entity
+@Table(name = "EBS_Payment")
+public class Payment {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long paymentId;
+
+    private Long billId;
+    private Long customerId; // Added Customer ID
+    private String cardNumber;
+    private String expiryDate;
+    private String cvv;
+
+    // Getters and Setters
+    public Long getCustomerId() {
+        return customerId;
+    }
+
+    public void setCustomerId(Long customerId) {
+        this.customerId = customerId;
+    }
+}
+```
+
+---
+
+#### **2. Update BillService**
+
+In the service layer, add logic to validate and set the **Customer ID** during payment.
+
+**`BillService.java`**
+```java
+public void markAsPaid(Long billId, Long customerId, Payment paymentDetails) {
+    Bill bill = billRepository.findById(billId)
+            .orElseThrow(() -> new IllegalArgumentException("Bill not found"));
+
+    if (bill.isPaid()) {
+        throw new IllegalArgumentException("Bill already paid");
+    }
+
+    if (!bill.getCustomerId().equals(customerId)) {
+        throw new IllegalArgumentException("This bill does not belong to the provided Customer ID");
+    }
+
+    // Save payment details
+    paymentDetails.setBillId(billId);
+    paymentDetails.setCustomerId(customerId);
+    paymentRepository.save(paymentDetails);
+
+    // Mark the bill as paid
+    bill.setPaid(true);
+    billRepository.save(bill);
+}
+```
+
+---
+
+#### **3. Update BillController**
+
+Add a **Customer ID** parameter to the endpoint.
+
+**`BillController.java`**
+```java
+@PutMapping("/{billId}/mark-as-paid")
+public ResponseEntity<String> markAsPaid(
+        @PathVariable Long billId,
+        @RequestParam Long customerId,
+        @RequestBody Payment paymentDetails) {
+    billService.markAsPaid(billId, customerId, paymentDetails);
+    return ResponseEntity.ok("Payment successful and bill marked as paid.");
+}
+```
+
+---
+
+#### **4. Database Script Updates**
+
+Update the table definitions to include the **Customer ID**.
+
+**EBS_Bill Table**
+```sql
+ALTER TABLE EBS_Bill ADD customer_id NUMBER;
+```
+
+**EBS_Payment Table**
+```sql
+ALTER TABLE EBS_Payment ADD customer_id NUMBER;
+```
+
+---
+
+### **Frontend Code**
+
+#### **1. Update Bill Model**
+
+**`bill.model.ts`**
+```typescript
+export interface Bill {
+  billId: number;
+  billDate: string;
+  dueDate: string;
+  billAmount: number;
+  isPaid: boolean;
+  customerId: number; // Added Customer ID
+}
+```
+
+---
+
+#### **2. Update Service**
+
+Update the service to include the **Customer ID**.
+
+**`bill.service.ts`**
+```typescript
+markAsPaid(billId: number, customerId: number, paymentDetails: any): Observable<string> {
+  const params = { customerId: customerId.toString() };
+  return this.http.put<string>(`${this.apiUrl}/${billId}/mark-as-paid`, paymentDetails, { params });
+}
+```
+
+---
+
+#### **3. Update Component**
+
+Modify the component to handle the **Customer ID** input.
+
+**`user-bills.component.ts`**
+```typescript
+import { Component } from '@angular/core';
+import { BillService } from '../services/bill.service';
+
+@Component({
+  selector: 'app-user-bills',
+  templateUrl: './user-bills.component.html',
+  styleUrls: ['./user-bills.component.css']
+})
+export class UserBillsComponent {
+  selectedBillId: number | null = null;
+  customerId: number | null = null; // Added Customer ID
+  paymentDetails = {
+    cardNumber: '',
+    expiryDate: '',
+    cvv: ''
+  };
+
+  constructor(private billService: BillService) {}
+
+  openPaymentModal(billId: number, customerId: number) {
+    this.selectedBillId = billId;
+    this.customerId = customerId;
+  }
+
+  markAsPaid() {
+    if (this.selectedBillId && this.customerId) {
+      this.billService.markAsPaid(this.selectedBillId, this.customerId, this.paymentDetails).subscribe(
+        (response) => {
+          alert(response);
+          this.selectedBillId = null;
+          this.customerId = null;
+        },
+        (error) => {
+          alert('Error: ' + error.error.message);
+        }
+      );
+    }
+  }
+}
+```
+
+---
+
+#### **4. Update HTML**
+
+Update the modal to include **Customer ID**.
+
+**`user-bills.component.html`**
+```html
+<div>
+  <h2>User Bills</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Bill ID</th>
+        <th>Bill Date</th>
+        <th>Due Date</th>
+        <th>Amount</th>
+        <th>Status</th>
+        <th>Customer ID</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>101</td>
+        <td>2023-12-15</td>
+        <td>2023-12-25</td>
+        <td>500</td>
+        <td>Unpaid</td>
+        <td>1001</td>
+        <td><button (click)="openPaymentModal(101, 1001)">Mark as Paid</button></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Payment Modal -->
+  <div *ngIf="selectedBillId">
+    <h3>Enter Payment Details</h3>
+    <label>Card Number: <input type="text" [(ngModel)]="paymentDetails.cardNumber"></label>
+    <label>Expiry Date: <input type="text" [(ngModel)]="paymentDetails.expiryDate"></label>
+    <label>CVV: <input type="text" [(ngModel)]="paymentDetails.cvv"></label>
+    <button (click)="markAsPaid()">Pay Now</button>
+    <button (click)="selectedBillId = null">Cancel</button>
+  </div>
+</div>
+```
+
+---
+
+This implementation enables associating a **Customer ID** with each bill, ensuring accurate tracking and validation of payments. Let me know if you need further assistance!
