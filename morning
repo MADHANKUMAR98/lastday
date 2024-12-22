@@ -46,3 +46,176 @@ export class BillGenerationComponent implements OnInit {
     this.toastr.success('Bill generated successfully!');
   }
 }
+
+
+Here’s a professional and visually appealing Angular 19 implementation of a selection page where users can choose between the "Admin" and "User" sections. The design incorporates elements related to electricity and modern styling for a better user experience.
+
+---
+
+### Angular Code
+
+#### Component: `role-selection.component.ts`
+```typescript
+import { Component } from '@angular/core';
+import { Router } from '@angular/router';
+
+@Component({
+  selector: 'app-role-selection',
+  templateUrl: './role-selection.component.html',
+  styleUrls: ['./role-selection.component.css']
+})
+export class RoleSelectionComponent {
+  constructor(private router: Router) {}
+
+  navigateTo(role: string): void {
+    if (role === 'admin') {
+      this.router.navigate(['/admin']);
+    } else if (role === 'user') {
+      this.router.navigate(['/user']);
+    }
+  }
+}
+```
+
+---
+
+#### HTML: `role-selection.component.html`
+```html
+<div class="role-selection-container">
+  <h1>Welcome to the Electricity Billing System</h1>
+  <p>Choose your role to proceed:</p>
+  <div class="card-container">
+    <div class="card" (click)="navigateTo('admin')">
+      <img src="assets/images/admin-icon.png" alt="Admin" />
+      <h2>Admin Section</h2>
+      <p>Manage customers, bills, and payments efficiently.</p>
+    </div>
+    <div class="card" (click)="navigateTo('user')">
+      <img src="assets/images/user-icon.png" alt="User" />
+      <h2>User Section</h2>
+      <p>View and pay your electricity bills with ease.</p>
+    </div>
+  </div>
+</div>
+```
+
+---
+
+#### CSS: `role-selection.component.css`
+```css
+/* General Styling */
+body {
+  font-family: 'Roboto', sans-serif;
+}
+
+.role-selection-container {
+  text-align: center;
+  padding: 50px;
+  background: linear-gradient(to bottom, #f0f9ff, #cbebff);
+  min-height: 100vh;
+}
+
+.role-selection-container h1 {
+  color: #003366;
+  font-size: 2.5rem;
+  margin-bottom: 10px;
+}
+
+.role-selection-container p {
+  color: #666;
+  font-size: 1.2rem;
+  margin-bottom: 30px;
+}
+
+/* Card Styling */
+.card-container {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+.card {
+  background-color: #fff;
+  border-radius: 10px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  width: 300px;
+  text-align: center;
+  padding: 20px;
+  cursor: pointer;
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0px 8px 12px rgba(0, 0, 0, 0.2);
+}
+
+.card img {
+  width: 80px;
+  margin-bottom: 15px;
+}
+
+.card h2 {
+  color: #003366;
+  font-size: 1.5rem;
+  margin-bottom: 10px;
+}
+
+.card p {
+  color: #666;
+  font-size: 1rem;
+}
+
+/* Media Queries for Responsiveness */
+@media (max-width: 768px) {
+  .card-container {
+    flex-direction: column;
+  }
+
+  .card {
+    width: 90%;
+    margin: 0 auto;
+  }
+}
+```
+
+---
+
+#### Assets:
+- Add relevant icons to `assets/images`:
+  - `admin-icon.png`: An icon representing admin functionalities (e.g., a gear or management icon).
+  - `user-icon.png`: An icon representing user functionalities (e.g., a user profile icon).
+
+---
+
+### Key Features:
+1. **Professional Styling**:
+   - Clean layout with modern card-based design.
+   - Soft gradient background to create an inviting feel.
+
+2. **Dynamic Navigation**:
+   - Clicking on the cards navigates to either `/admin` or `/user`.
+
+3. **Electricity Theme**:
+   - Colors (blue and white gradients) evoke a connection to electricity.
+   - The icons and layout give a professional vibe.
+
+4. **Responsive Design**:
+   - Adapts to mobile, tablet, and desktop views seamlessly.
+
+---
+
+### Routes Configuration
+In your Angular routing module (`app-routing.module.ts`), define routes for `admin` and `user`:
+```typescript
+const routes: Routes = [
+  { path: '', component: RoleSelectionComponent },
+  { path: 'admin', component: AdminComponent }, // Replace with your AdminComponent
+  { path: 'user', component: UserComponent }    // Replace with your UserComponent
+];
+```
+
+---
+
+### Result:
+This page will allow users to easily select between the Admin and User sections with a visually appealing and electricity-themed design. Let me know if you'd like further customization!
