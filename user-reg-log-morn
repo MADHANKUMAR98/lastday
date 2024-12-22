@@ -314,3 +314,287 @@ button:disabled {
 ---
 
 This design should stand out and provide an interactive and visually appealing experience for users. Let me know if you'd like any more adjustments! 😊
+
+
+
+
+
+
+
+
+
+
+Here's how you can implement the login and registration logic in the TypeScript files for Angular. This includes form validation, API integration, and basic feedback.
+
+### **Login Logic:**
+
+#### **login.component.ts**
+
+```typescript
+import { Component, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
+import { AuthService } from '../auth.service'; // Service to handle API calls
+
+@Component({
+  selector: 'app-login',
+  templateUrl: './login.component.html',
+  styleUrls: ['./login.component.css'],
+})
+export class LoginComponent implements OnInit {
+  loginForm: FormGroup;
+  errorMessage: string = ''; // To display error message
+
+  constructor(
+    private fb: FormBuilder,
+    private authService: AuthService,
+    private router: Router
+  ) {}
+
+  ngOnInit(): void {
+    // Initialize the login form
+    this.loginForm = this.fb.group({
+      userId: ['', Validators.required], // User ID is required
+      password: ['', [Validators.required, Validators.minLength(8)]], // Password is required and should be at least 8 characters long
+    });
+  }
+
+  // Login method
+  login(): void {
+    if (this.loginForm.invalid) {
+      return;
+    }
+
+    const { userId, password } = this.loginForm.value;
+
+    // Call the login API
+    this.authService.login(userId, password).subscribe(
+      (response) => {
+        // If login is successful, navigate to the user dashboard
+        this.router.navigate(['/user-dashboard']);
+      },
+      (error) => {
+        // If login fails, show the error message
+        this.errorMessage = 'Invalid credentials. Please try again.';
+      }
+    );
+  }
+}
+```
+
+#### **auth.service.ts (for login API)**
+
+```typescript
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+
+@Injectable({
+  providedIn: 'root',
+})
+export class AuthService {
+  private apiUrl = 'http://your-api-url.com'; // Replace with your actual API URL
+
+  constructor(private http: HttpClient) {}
+
+  // Login API call
+  login(userId: string, password: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}/login`, { userId, password });
+  }
+}
+```
+
+### **Registration Logic:**
+
+#### **register.component.ts**
+
+```typescript
+import { Component, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { AuthService } from '../auth.service'; // Service to handle API calls
+import { Router } from '@angular/router';
+
+@Component({
+  selector: 'app-register',
+  templateUrl: './register.component.html',
+  styleUrls: ['./register.component.css'],
+})
+export class RegisterComponent implements OnInit {
+  registerForm: FormGroup;
+  errorMessage: string = ''; // To display error message
+
+  constructor(
+    private fb: FormBuilder,
+    private authService: AuthService,
+    private router: Router
+  ) {}
+
+  ngOnInit(): void {
+    // Initialize the registration form
+    this.registerForm = this.fb.group({
+      firstName: ['', Validators.required],
+      lastName: ['', Validators.required],
+      aadharId: [
+        '',
+        [Validators.required, Validators.minLength(12), Validators.maxLength(12)],
+      ],
+      phoneNumber: [
+        '',
+        [Validators.required, Validators.pattern(/^\d{10}$/)],
+      ],
+      email: ['', [Validators.required, Validators.email]],
+      password: [
+        '',
+        [Validators.required, Validators.minLength(8)],
+      ],
+    });
+  }
+
+  // Register method
+  register(): void {
+    if (this.registerForm.invalid) {
+      return;
+    }
+
+    const user = this.registerForm.value;
+
+    // Call the register API
+    this.authService.register(user).subscribe(
+      (response) => {
+        // If registration is successful, navigate to login page
+        this.router.navigate(['/login']);
+      },
+      (error) => {
+        // If registration fails, show the error message
+        this.errorMessage = error.error.message || 'Registration failed. Please try again.';
+      }
+    );
+  }
+}
+```
+
+#### **auth.service.ts (for registration API)**
+
+```typescript
+@Injectable({
+  providedIn: 'root',
+})
+export class AuthService {
+  private apiUrl = 'http://your-api-url.com'; // Replace with your actual API URL
+
+  constructor(private http: HttpClient) {}
+
+  // Register API call
+  register(user: any): Observable<any> {
+    return this.http.post(`${this.apiUrl}/register`, user);
+  }
+
+  // Login API call (same as before)
+  login(userId: string, password: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}/login`, { userId, password });
+  }
+}
+```
+
+### **Backend Logic for Registration and Login (Example in Spring Boot)**
+
+Here’s how the backend could handle user registration and login:
+
+#### **User Entity (JPA)**
+
+```java
+@Entity
+public class User {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String firstName;
+    private String lastName;
+    private String aadharId;
+    private String phoneNumber;
+    private String email;
+    private String password;
+    private String userId; // Auto-generated based on Aadhar ID's last 4 digits
+
+    // Getters and setters
+}
+```
+
+#### **User Registration Endpoint (Spring Boot)**
+
+```java
+@RestController
+@RequestMapping("/api")
+public class UserController {
+
+    @Autowired
+    private UserService userService;
+
+    @PostMapping("/register")
+    public ResponseEntity<String> registerUser(@RequestBody User user) {
+        // Handle user registration
+        try {
+            userService.registerUser(user);
+            return ResponseEntity.ok("Registration successful");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Registration failed: " + e.getMessage());
+        }
+    }
+    
+    @PostMapping("/login")
+    public ResponseEntity<String> loginUser(@RequestBody LoginRequest loginRequest) {
+        // Handle login logic
+        if (userService.authenticateUser(loginRequest)) {
+            return ResponseEntity.ok("Login successful");
+        } else {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
+        }
+    }
+}
+```
+
+#### **User Service (Spring Boot)**
+
+```java
+@Service
+public class UserService {
+
+    @Autowired
+    private UserRepository userRepository;
+
+    public void registerUser(User user) {
+        if (userRepository.existsByAadharId(user.getAadharId())) {
+            throw new AadharIdAlreadyExistsException("Aadhar ID already exists");
+        }
+
+        // Save user logic, including password encoding, etc.
+        userRepository.save(user);
+    }
+
+    public boolean authenticateUser(LoginRequest loginRequest) {
+        // Authenticate logic (match username & password)
+        User user = userRepository.findByUserId(loginRequest.getUserId());
+        return user != null && user.getPassword().equals(loginRequest.getPassword());
+    }
+}
+```
+
+#### **LoginRequest DTO (Spring Boot)**
+
+```java
+public class LoginRequest {
+    private String userId;
+    private String password;
+
+    // Getters and setters
+}
+```
+
+### **Key Points:**
+- The **login** method in the Angular service handles the user authentication.
+- The **register** method sends the user data to the backend to create a new user.
+- Form validations ensure all fields are correctly filled out before submitting.
+- Both the login and registration processes involve interacting with backend APIs (assuming you have an endpoint for both `/login` and `/register`).
+
+Let me know if you need further enhancements or additional functionality!
