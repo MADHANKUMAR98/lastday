@@ -166,3 +166,299 @@ export class AdminHomeComponent implements OnInit {
 ---
 
 Let me know if you’d like to add more sections, such as a dashboard summary or real-time energy trends, to this page!
+
+
+
+
+
+
+
+
+
+
+
+
+
+Here's an improved **Admin Home Page** with additional sections for blogs, trending topics, and exciting animations to make it visually appealing and interactive. 
+
+---
+
+### **HTML (admin-home.component.html):**
+```html
+<div class="admin-home-container">
+  <h1>Welcome, Admin!</h1>
+  <p>Stay updated with the latest insights and manage your tasks efficiently.</p>
+
+  <!-- Scrolling Facts Section -->
+  <div class="scrolling-content">
+    <div class="card" *ngFor="let fact of adminFacts">
+      <h2>{{ fact.title }}</h2>
+      <p>{{ fact.content }}</p>
+    </div>
+  </div>
+
+  <!-- Blog Section -->
+  <div class="blogs-section">
+    <h2>Featured Blogs</h2>
+    <div class="blog-card" *ngFor="let blog of adminBlogs">
+      <img [src]="blog.image" alt="Blog Image" />
+      <div class="blog-content">
+        <h3>{{ blog.title }}</h3>
+        <p>{{ blog.description }}</p>
+        <a [href]="blog.link" target="_blank" class="read-more">Read More</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Trending Topics Section -->
+  <div class="trending-section">
+    <h2>Trending Topics</h2>
+    <ul>
+      <li *ngFor="let topic of trendingTopics">
+        <span>{{ topic }}</span>
+        <div class="dot-pulse"></div>
+      </li>
+    </ul>
+  </div>
+</div>
+```
+
+---
+
+### **CSS (admin-home.component.css):**
+```css
+/* General Styles */
+.admin-home-container {
+  padding: 20px;
+  font-family: 'Arial', sans-serif;
+  background: linear-gradient(to bottom, #f0f8ff, #e6f7ff);
+  color: #333;
+  text-align: center;
+}
+
+h1 {
+  font-size: 2.5rem;
+  margin-bottom: 10px;
+}
+
+p {
+  font-size: 1.2rem;
+  margin-bottom: 30px;
+}
+
+/* Scrolling Facts Section */
+.scrolling-content {
+  display: flex;
+  overflow-x: auto;
+  gap: 15px;
+  padding: 20px;
+}
+
+.card {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  min-width: 300px;
+  flex: 0 0 auto;
+  animation: slide-in 1s ease-in-out;
+}
+
+.card h2 {
+  color: #2a9df4;
+  margin-bottom: 10px;
+}
+
+.card p {
+  color: #666;
+}
+
+/* Blogs Section */
+.blogs-section {
+  margin-top: 40px;
+  text-align: left;
+}
+
+.blogs-section h2 {
+  margin-bottom: 20px;
+  font-size: 2rem;
+  color: #333;
+}
+
+.blog-card {
+  display: flex;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+  overflow: hidden;
+  animation: fade-in 1s ease-in-out;
+}
+
+.blog-card img {
+  width: 150px;
+  height: auto;
+}
+
+.blog-content {
+  padding: 15px;
+}
+
+.blog-content h3 {
+  font-size: 1.5rem;
+  color: #2a9df4;
+  margin-bottom: 10px;
+}
+
+.blog-content p {
+  color: #555;
+  margin-bottom: 10px;
+}
+
+.blog-content .read-more {
+  text-decoration: none;
+  color: #007bff;
+  font-weight: bold;
+}
+
+/* Trending Topics Section */
+.trending-section {
+  margin-top: 40px;
+}
+
+.trending-section h2 {
+  margin-bottom: 20px;
+  font-size: 2rem;
+  color: #333;
+}
+
+.trending-section ul {
+  list-style: none;
+  padding: 0;
+}
+
+.trending-section li {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+  font-size: 1.2rem;
+}
+
+.dot-pulse {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #2a9df4;
+  margin-left: 10px;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Animations */
+@keyframes slide-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+```
+
+---
+
+### **TypeScript (admin-home.component.ts):**
+```typescript
+import { Component, OnInit } from '@angular/core';
+
+@Component({
+  selector: 'app-admin-home',
+  templateUrl: './admin-home.component.html',
+  styleUrls: ['./admin-home.component.css'],
+})
+export class AdminHomeComponent implements OnInit {
+  adminFacts = [
+    {
+      title: 'Electricity Billing Systems',
+      content:
+        'Modern billing systems use AI and automation to generate accurate bills and provide real-time consumption data.',
+    },
+    {
+      title: 'Save Energy, Save Money',
+      content:
+        'Simple tips like switching off unused devices and using energy-efficient appliances can reduce electricity bills by 15%.',
+    },
+    {
+      title: 'Smart Meters',
+      content:
+        'Smart meters are revolutionizing energy tracking, allowing users to monitor consumption through mobile apps.',
+    },
+  ];
+
+  adminBlogs = [
+    {
+      title: 'The Future of Renewable Energy',
+      description:
+        'Explore how renewable energy sources like solar and wind are shaping the future of electricity.',
+      image: 'assets/images/renewable-energy.jpg',
+      link: 'https://example.com/blog/renewable-energy',
+    },
+    {
+      title: 'Top 5 Energy-Saving Tips',
+      description:
+        'Discover practical tips to reduce your energy consumption and save on bills.',
+      image: 'assets/images/energy-saving.jpg',
+      link: 'https://example.com/blog/energy-saving',
+    },
+    {
+      title: 'Understanding Smart Grids',
+      description:
+        'Learn about the technology behind smart grids and their impact on modern electricity management.',
+      image: 'assets/images/smart-grid.jpg',
+      link: 'https://example.com/blog/smart-grid',
+    },
+  ];
+
+  trendingTopics = [
+    'Blockchain in Energy Billing',
+    'Electric Vehicles and Grid Integration',
+    'AI for Predicting Energy Consumption',
+    'Smart Homes and IoT in Energy',
+  ];
+
+  ngOnInit(): void {}
+}
+```
+
+---
+
+### **Features Added:**
+
+1. **Scrolling Facts:** Horizontal scrolling cards with smooth animations.
+2. **Blogs Section:**  
+   - Featured blogs with images, descriptions, and links.  
+   - Animated fade-in effects for cards.  
+3. **Trending Topics:**  
+   - List with animated "dot-pulse" effects for each item.  
+4. **Responsive Design:** Works seamlessly on desktop, tablet, and mobile.
+
+Let me know if you'd like further enhancements!
