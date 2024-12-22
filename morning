@@ -1,0 +1,48 @@
+import { Component, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ToastrService } from 'ngx-toastr';
+
+@Component({
+  selector: 'app-bill-generation',
+  templateUrl: './bill-generation.component.html',
+  styleUrls: ['./bill-generation.component.css']
+})
+export class BillGenerationComponent implements OnInit {
+  billForm!: FormGroup;
+  private ratePerUnit = 10; // Rate per unit
+
+  constructor(private fb: FormBuilder, private toastr: ToastrService) {}
+
+  ngOnInit(): void {
+    // Initialize the form
+    this.billForm = this.fb.group({
+      customerId: ['', Validators.required],
+      billDate: ['', Validators.required],
+      dueDate: ['', Validators.required],
+      noOfUnits: ['', [Validators.required, Validators.min(1)]],
+      billAmount: [{ value: '', disabled: true }, [Validators.required]]
+    });
+
+    // Calculate bill amount dynamically
+    this.billForm.get('noOfUnits')?.valueChanges.subscribe((noOfUnits) => {
+      if (noOfUnits && noOfUnits > 0) {
+        const billAmount = noOfUnits * this.ratePerUnit;
+        this.billForm.patchValue({ billAmount });
+      } else {
+        this.billForm.patchValue({ billAmount: '' });
+      }
+    });
+  }
+
+  generateBill(): void {
+    if (this.billForm.invalid) {
+      this.toastr.error('Please fill out all required fields correctly.');
+      return;
+    }
+
+    const billData = this.billForm.getRawValue(); // Includes disabled fields like billAmount
+    console.log('Generated Bill Data:', billData);
+
+    this.toastr.success('Bill generated successfully!');
+  }
+}
