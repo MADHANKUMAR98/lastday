@@ -96,3 +96,93 @@ Key Points:
 
 Would you like a detailed explanation of token signing, parsing, or specific customization for your use case?
 
+
+To extract the userId from a JSON Web Token (JWT) received from your backend and store it in session storage within your Angular application, follow these steps:
+
+1. Decode the JWT: Use a library to parse the token and extract the payload. A commonly used library for this purpose is jwt-decode.
+
+
+2. Extract the userId: Identify the appropriate claim in the token payload that contains the userId. Typically, this might be the sub (subject) claim or a custom claim like userId.
+
+
+3. Store in Session Storage: Save the extracted userId in session storage for use throughout the user's session.
+
+
+
+Here's how you can implement this in your Angular application:
+
+1. Install the jwt-decode Library
+
+First, install the jwt-decode library using npm:
+
+npm install jwt-decode
+
+2. Implement the Logic in Your Authentication Service
+
+In your authentication service, decode the token, extract the userId, and store it in session storage:
+
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import jwt_decode from 'jwt-decode';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class AuthService {
+  private apiUrl = 'https://your-api-url.com'; // Replace with your API URL
+
+  constructor(private http: HttpClient) { }
+
+  login(userId: string, password: string) {
+    const body = { userId, password };
+
+    return this.http.post<any>(`${this.apiUrl}/authenticate/login`, body)
+      .subscribe(response => {
+        const token = response.token; // Adjust based on your API's response structure
+        this.handleToken(token);
+      }, error => {
+        console.error('Login failed', error);
+      });
+  }
+
+  private handleToken(token: string) {
+    try {
+      const decodedToken: any = jwt_decode(token);
+      const userId = decodedToken.userId || decodedToken.sub; // Adjust based on your token's structure
+
+      // Store userId in session storage
+      sessionStorage.setItem('userId', userId);
+
+      // Optionally, store the token if needed
+      sessionStorage.setItem('authToken', token);
+    } catch (error) {
+      console.error('Error decoding token', error);
+    }
+  }
+}
+
+3. Accessing the userId from Session Storage
+
+Whenever you need to access the userId during the user's session:
+
+const userId = sessionStorage.getItem('userId');
+
+Important Considerations
+
+Security: Storing sensitive information like userId in session storage is generally acceptable for non-critical data. However, be cautious with highly sensitive information, as session storage is accessible via JavaScript and could be vulnerable to cross-site scripting (XSS) attacks. Ensure your application is protected against XSS vulnerabilities. 
+
+Token Structure: Ensure you know the structure of your JWT. Standard claims include sub (subject), which often contains the user identifier. If your backend uses a custom claim for userId, adjust the extraction logic accordingly.
+
+Session Management: Remember that data in session storage persists only for the duration of the page session. If the user closes the browser or tab, the data will be cleared. If you require persistence across sessions, consider using local storage, but be mindful of the security implications. 
+
+Error Handling: Implement robust error handling to manage scenarios where the token is invalid or the expected claims are missing.
+
+
+By following these steps, you can effectively extract the userId from the JWT and manage it within your Angular application.
+
+For a visual demonstration, you might find this video tutorial helpful:
+
+
+
+
+
