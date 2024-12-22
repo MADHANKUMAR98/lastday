@@ -1,0 +1,278 @@
+Below is the complete implementation for a **Payment Entity** that allows the admin to fetch payment details for a specific bill ID. The front-end includes animations, creative elements (like a credit card photo), and a polished UI. 
+
+---
+
+### **Backend Code**
+
+#### **Payment Entity**
+```java
+import jakarta.persistence.*;
+import java.time.LocalDate;
+
+@Entity
+@Table(name = "payments")
+public class Payment {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "payment_id")
+    private Long paymentId;
+
+    @Column(name = "bill_id", nullable = false)
+    private Long billId;
+
+    @Column(name = "customer_id", nullable = false)
+    private String customerId;
+
+    @Column(name = "payment_method", nullable = false)
+    private String paymentMethod;
+
+    @Column(name = "amount", nullable = false)
+    private Double amount;
+
+    @Column(name = "payment_date", nullable = false)
+    private LocalDate paymentDate;
+
+    // Getters and setters
+    // ...
+}
+```
+
+---
+
+#### **Payment Repository**
+```java
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface PaymentRepository extends JpaRepository<Payment, Long> {
+    Payment findByBillId(Long billId);
+}
+```
+
+---
+
+#### **Payment Service**
+```java
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+@Service
+public class PaymentService {
+
+    @Autowired
+    private PaymentRepository paymentRepository;
+
+    public Payment getPaymentDetails(Long billId) {
+        return paymentRepository.findByBillId(billId);
+    }
+}
+```
+
+---
+
+#### **Payment Controller**
+```java
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/payments")
+@CrossOrigin(origins = "http://localhost:4200")
+public class PaymentController {
+
+    @Autowired
+    private PaymentService paymentService;
+
+    @GetMapping("/{billId}")
+    public ResponseEntity<Payment> getPaymentDetails(@PathVariable Long billId) {
+        Payment payment = paymentService.getPaymentDetails(billId);
+        return payment != null ? ResponseEntity.ok(payment) : ResponseEntity.notFound().build();
+    }
+}
+```
+
+---
+
+### **Frontend Code (Angular)**
+
+#### **Dependencies**
+Install Angular Material and Angular Animations:
+```bash
+ng add @angular/material
+npm install --save @angular/animations
+```
+
+---
+
+#### **`admin-payment.component.html`**
+```html
+<div class="payment-container">
+  <h2 class="title">Payment Details</h2>
+
+  <form [formGroup]="billForm" (ngSubmit)="fetchPaymentDetails()" class="form">
+    <mat-form-field appearance="outline" class="form-field">
+      <mat-label>Bill ID</mat-label>
+      <input
+        matInput
+        type="text"
+        formControlName="billId"
+        placeholder="Enter Bill ID"
+      />
+      <mat-error *ngIf="f['billId'].hasError('required')">
+        Bill ID is required
+      </mat-error>
+    </mat-form-field>
+
+    <button
+      mat-raised-button
+      color="primary"
+      type="submit"
+      [disabled]="billForm.invalid"
+    >
+      Fetch Payment
+    </button>
+  </form>
+
+  <mat-card *ngIf="payment" class="payment-card" [@fadeIn]>
+    <img src="assets/images/credit-card.png" class="card-image" alt="Credit Card" />
+    <h3>Payment Details</h3>
+    <p><strong>Bill ID:</strong> {{ payment.billId }}</p>
+    <p><strong>Customer ID:</strong> {{ payment.customerId }}</p>
+    <p><strong>Payment Method:</strong> {{ payment.paymentMethod }}</p>
+    <p><strong>Amount:</strong> {{ payment.amount | currency }}</p>
+    <p><strong>Payment Date:</strong> {{ payment.paymentDate | date }}</p>
+  </mat-card>
+</div>
+```
+
+---
+
+#### **`admin-payment.component.ts`**
+```typescript
+import { Component } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { PaymentService } from '../services/payment.service';
+
+@Component({
+  selector: 'app-admin-payment',
+  templateUrl: './admin-payment.component.html',
+  styleUrls: ['./admin-payment.component.css'],
+  animations: [
+    trigger('fadeIn', [
+      state('void', style({ opacity: 0 })),
+      transition(':enter', [animate('500ms ease-in')]),
+    ]),
+  ],
+})
+export class AdminPaymentComponent {
+  billForm: FormGroup;
+  payment: any;
+
+  constructor(private fb: FormBuilder, private paymentService: PaymentService) {
+    this.billForm = this.fb.group({
+      billId: ['', [Validators.required]],
+    });
+  }
+
+  get f() {
+    return this.billForm.controls;
+  }
+
+  fetchPaymentDetails(): void {
+    const billId = this.billForm.value.billId;
+    this.paymentService.getPaymentDetails(billId).subscribe(
+      (data) => (this.payment = data),
+      (error) => console.error('Error fetching payment details', error)
+    );
+  }
+}
+```
+
+---
+
+#### **`payment.service.ts`**
+```typescript
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+
+@Injectable({
+  providedIn: 'root',
+})
+export class PaymentService {
+  private apiUrl = 'http://localhost:8080/api/payments';
+
+  constructor(private http: HttpClient) {}
+
+  getPaymentDetails(billId: string): Observable<any> {
+    return this.http.get(`${this.apiUrl}/${billId}`);
+  }
+}
+```
+
+---
+
+#### **Styling (`admin-payment.component.css`)**
+```css
+.payment-container {
+  max-width: 600px;
+  margin: 50px auto;
+  padding: 20px;
+  background: #f9f9f9;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.title {
+  text-align: center;
+  font-size: 24px;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+.form {
+  margin-bottom: 30px;
+}
+
+.form-field {
+  width: 100%;
+}
+
+.payment-card {
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.card-image {
+  display: block;
+  margin: 0 auto 20px;
+  max-width: 80px;
+}
+
+.payment-card h3 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #555;
+}
+
+.payment-card p {
+  margin: 8px 0;
+  color: #666;
+}
+```
+
+---
+
+#### **Creative Element (Image)**
+Place a sample credit card image in the `assets/images` folder. You can use any royalty-free image of a credit card.
+
+---
+
+### **Animations**
+The `fadeIn` animation ensures the payment details appear smoothly when fetched.
+
+---
+
+With this implementation, admins can fetch and view payment details for a specific bill ID, complete with a professional UI and creative elements.
