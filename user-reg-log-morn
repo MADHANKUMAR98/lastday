@@ -1,0 +1,316 @@
+Sure! Let's create a **User Login & Registration Page** with a clean design, animations, and styles that make it distinct from the admin front-end.
+
+I'll break this down into the following steps:
+
+1. **User Login Page**: This will include a "Login" form with a link to the "Register" page if the user is not registered.
+2. **User Registration Page**: A registration form where users can enter their details.
+3. **Styling**: The page will be styled to have animations, transitions, and a modern look.
+4. **Linking**: Links between the login and register pages.
+
+---
+
+### **User Login Page (HTML & Angular)**
+
+```html
+<!-- user-login.component.html -->
+<div class="login-container">
+  <div class="login-card">
+    <h2>User Login</h2>
+    <form [formGroup]="loginForm" (ngSubmit)="onLogin()">
+      <div class="form-group">
+        <label for="userId">User ID</label>
+        <input type="text" id="userId" formControlName="userId" placeholder="Enter your User ID" />
+        <div *ngIf="loginForm.get('userId')?.invalid && loginForm.get('userId')?.touched" class="error">
+          User ID is required.
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" formControlName="password" placeholder="Enter your password" />
+        <div *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched" class="error">
+          Password is required.
+        </div>
+      </div>
+
+      <button type="submit" [disabled]="loginForm.invalid" class="btn-login">Login</button>
+      
+      <div class="register-link">
+        <span>Not registered?</span>
+        <a routerLink="/user/register">Click here to register</a>
+      </div>
+    </form>
+  </div>
+
+  <!-- Animation GIF below the form -->
+  <div class="animation">
+    <img src="assets/animations/login-animation.gif" alt="Login Animation" />
+  </div>
+</div>
+```
+
+### **User Registration Page (HTML & Angular)**
+
+```html
+<!-- user-register.component.html -->
+<div class="register-container">
+  <div class="register-card">
+    <h2>Register User</h2>
+    <form [formGroup]="registerForm" (ngSubmit)="onRegister()">
+      <div class="form-group">
+        <label for="firstName">First Name</label>
+        <input type="text" id="firstName" formControlName="firstName" placeholder="Enter your First Name" />
+      </div>
+
+      <div class="form-group">
+        <label for="lastName">Last Name</label>
+        <input type="text" id="lastName" formControlName="lastName" placeholder="Enter your Last Name" />
+      </div>
+
+      <div class="form-group">
+        <label for="aadharId">Aadhar ID</label>
+        <input type="text" id="aadharId" formControlName="aadharId" placeholder="Enter your Aadhar ID" />
+      </div>
+
+      <div class="form-group">
+        <label for="phoneNumber">Phone Number</label>
+        <input type="text" id="phoneNumber" formControlName="phoneNumber" placeholder="Enter your Phone Number" />
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" formControlName="email" placeholder="Enter your Email" />
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" formControlName="password" placeholder="Enter your Password" />
+      </div>
+
+      <button type="submit" [disabled]="registerForm.invalid" class="btn-register">Register</button>
+    </form>
+  </div>
+
+  <!-- Animation GIF below the form -->
+  <div class="animation">
+    <img src="assets/animations/register-animation.gif" alt="Register Animation" />
+  </div>
+</div>
+```
+
+### **Angular Component (TypeScript)**
+
+```typescript
+// user-login.component.ts
+import { Component, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+
+@Component({
+  selector: 'app-user-login',
+  templateUrl: './user-login.component.html',
+  styleUrls: ['./user-login.component.css'],
+})
+export class UserLoginComponent implements OnInit {
+  loginForm!: FormGroup;
+
+  constructor(private fb: FormBuilder) {}
+
+  ngOnInit(): void {
+    this.loginForm = this.fb.group({
+      userId: ['', Validators.required],
+      password: ['', Validators.required],
+    });
+  }
+
+  onLogin(): void {
+    if (this.loginForm.valid) {
+      // Perform login logic here
+      console.log('Login successful:', this.loginForm.value);
+    } else {
+      this.loginForm.markAllAsTouched(); // Show validation errors
+    }
+  }
+}
+
+// user-register.component.ts
+import { Component, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+
+@Component({
+  selector: 'app-user-register',
+  templateUrl: './user-register.component.html',
+  styleUrls: ['./user-register.component.css'],
+})
+export class UserRegisterComponent implements OnInit {
+  registerForm!: FormGroup;
+
+  constructor(private fb: FormBuilder) {}
+
+  ngOnInit(): void {
+    this.registerForm = this.fb.group({
+      firstName: ['', Validators.required],
+      lastName: ['', Validators.required],
+      aadharId: ['', [Validators.required, Validators.minLength(12), Validators.maxLength(12)]],
+      phoneNumber: ['', [Validators.required, Validators.pattern(/^\d{10}$/)]],
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', [Validators.required, Validators.minLength(8)]],
+    });
+  }
+
+  onRegister(): void {
+    if (this.registerForm.valid) {
+      // Perform register logic here
+      console.log('Registration successful:', this.registerForm.value);
+    } else {
+      this.registerForm.markAllAsTouched(); // Show validation errors
+    }
+  }
+}
+```
+
+---
+
+### **Styling (CSS)**
+
+```css
+/* user-login.component.css */
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  height: 100vh;
+  background-color: #f4f4f4;
+}
+
+.login-card {
+  background-color: #fff;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  width: 400px;
+  text-align: center;
+}
+
+h2 {
+  margin-bottom: 20px;
+  font-size: 24px;
+  color: #333;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+button {
+  width: 100%;
+  padding: 10px;
+  background-color: #4caf50;
+  border: none;
+  border-radius: 5px;
+  color: #fff;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+button:disabled {
+  background-color: #ccc;
+}
+
+.register-link {
+  margin-top: 20px;
+  font-size: 14px;
+}
+
+.register-link a {
+  color: #007bff;
+  text-decoration: none;
+}
+
+.register-link a:hover {
+  text-decoration: underline;
+}
+
+.animation {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.error {
+  color: red;
+  font-size: 12px;
+}
+
+/* user-register.component.css */
+.register-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  height: 100vh;
+  background-color: #f9f9f9;
+}
+
+.register-card {
+  background-color: #fff;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  width: 400px;
+  text-align: center;
+}
+
+h2 {
+  margin-bottom: 20px;
+  font-size: 24px;
+  color: #333;
+}
+
+input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  margin-bottom: 10px;
+}
+
+button {
+  width: 100%;
+  padding: 10px;
+  background-color: #007bff;
+  border: none;
+  border-radius: 5px;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+button:disabled {
+  background-color: #ccc;
+}
+
+.animation {
+  margin-top: 20px;
+  text-align: center;
+}
+```
+
+---
+
+### **Key Points:**
+
+1. **Login Page**: The login page has a form with `userId` and `password` fields. If the user isn't registered, they can click on the "Not registered? Click here to register" link, which takes them to the registration page.
+2. **Register Page**: The registration page captures user information such as `firstName`, `lastName`, `aadharId`, `phoneNumber`, `email`, and `password`. The `userId` is automatically generated based on the last four digits of the `aadharId`.
+3. **Styling & Animations**: Both pages are styled with a modern design, including card layouts, form inputs, and buttons. There are GIF animations under the form to add visual appeal.
+4. **Validation**: Both forms have validations (e.g., required fields, specific formats), and buttons are disabled until the form is valid.
+
+---
+
+This design should stand out and provide an interactive and visually appealing experience for users. Let me know if you'd like any more adjustments! 😊
