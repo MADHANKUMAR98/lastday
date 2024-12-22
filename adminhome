@@ -1,0 +1,168 @@
+Here's an improved **Admin Home Page** with engaging content such as facts, articles, and tips related to electricity, energy conservation, and billing systems. The design incorporates scrolling cards with animations to keep the interface dynamic and visually appealing.
+
+---
+
+### **HTML (admin-home.component.html):**
+```html
+<div class="admin-home-container">
+  <h1>Welcome, Admin!</h1>
+  <p>Stay updated with the latest insights and facts about energy and electricity billing systems.</p>
+
+  <div class="scrolling-content">
+    <div class="card" *ngFor="let fact of adminFacts">
+      <h2>{{ fact.title }}</h2>
+      <p>{{ fact.content }}</p>
+    </div>
+  </div>
+</div>
+```
+
+---
+
+### **CSS (admin-home.component.css):**
+```css
+.admin-home-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 20px;
+  background: linear-gradient(to bottom, #f0f8ff, #e6f7ff);
+  min-height: 100vh;
+  font-family: 'Arial', sans-serif;
+}
+
+.admin-home-container h1 {
+  font-size: 2.5rem;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.admin-home-container p {
+  font-size: 1.2rem;
+  color: #555;
+  margin-bottom: 30px;
+}
+
+.scrolling-content {
+  display: flex;
+  gap: 15px;
+  overflow-x: auto;
+  padding: 20px;
+  width: 100%;
+}
+
+.card {
+  min-width: 300px;
+  flex: 0 0 auto;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  text-align: left;
+  animation: slide-in 1s ease-in-out;
+}
+
+.card h2 {
+  font-size: 1.5rem;
+  margin-bottom: 10px;
+  color: #2a9df4;
+}
+
+.card p {
+  font-size: 1rem;
+  color: #666;
+}
+
+@keyframes slide-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Smooth scrolling for better UX */
+.scrolling-content::-webkit-scrollbar {
+  height: 8px;
+}
+
+.scrolling-content::-webkit-scrollbar-thumb {
+  background: #2a9df4;
+  border-radius: 4px;
+}
+```
+
+---
+
+### **TypeScript (admin-home.component.ts):**
+```typescript
+import { Component, OnInit } from '@angular/core';
+
+@Component({
+  selector: 'app-admin-home',
+  templateUrl: './admin-home.component.html',
+  styleUrls: ['./admin-home.component.css'],
+})
+export class AdminHomeComponent implements OnInit {
+  adminFacts = [
+    {
+      title: 'Electricity Billing Systems',
+      content:
+        'Modern billing systems use AI and automation to generate accurate bills and provide real-time consumption data.',
+    },
+    {
+      title: 'Save Energy, Save Money',
+      content:
+        'Simple tips like switching off unused devices and using energy-efficient appliances can reduce electricity bills by 15%.',
+    },
+    {
+      title: 'Smart Meters',
+      content:
+        'Smart meters are revolutionizing energy tracking, allowing users to monitor consumption through mobile apps.',
+    },
+    {
+      title: 'Renewable Energy',
+      content:
+        'Solar and wind energy are becoming key players in reducing carbon footprints and promoting sustainable living.',
+    },
+    {
+      title: 'Future Trends',
+      content:
+        'Electricity billing is moving towards blockchain technology for enhanced security and transparency.',
+    },
+  ];
+
+  ngOnInit(): void {}
+}
+```
+
+---
+
+### **Key Features in the Design:**
+
+1. **Dynamic Scrolling Cards:**
+   - Displays multiple facts and articles in a horizontally scrollable format.
+   - Each card slides in with an animation for better engagement.
+
+2. **Styling:**
+   - Professional yet creative styling with a clean background gradient.
+   - Cards have rounded corners, subtle shadows, and responsive sizes.
+
+3. **Engaging Content:**
+   - Includes educational and inspiring content relevant to electricity and energy management.
+   - Admin can scroll and read interesting facts while working.
+
+4. **Animations:**
+   - Smooth slide-in animations for cards enhance visual appeal.
+   - Scrollbar styling for better UX.
+
+5. **Responsive Design:**
+   - Ensures a great experience on all devices (desktop, tablet, mobile).
+
+---
+
+Let me know if you’d like to add more sections, such as a dashboard summary or real-time energy trends, to this page!
