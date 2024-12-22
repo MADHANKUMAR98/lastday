@@ -598,3 +598,37 @@ public class LoginRequest {
 - Both the login and registration processes involve interacting with backend APIs (assuming you have an endpoint for both `/login` and `/register`).
 
 Let me know if you need further enhancements or additional functionality!
+
+
+
+import { Component, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+
+@Component({
+  selector: 'app-user-login',
+  templateUrl: './user-login.component.html',
+  styleUrls: ['./user-login.component.css']
+})
+export class UserLoginComponent implements OnInit {
+  loginForm!: FormGroup; // Use definite assignment assertion (!)
+  errorMessage: string = ""; // To display error message
+
+  constructor(private fb: FormBuilder) {}
+
+  ngOnInit(): void {
+    this.loginForm = this.fb.group({
+      username: ['', Validators.required],
+      password: ['', Validators.required]
+    });
+  }
+
+  onSubmit(): void {
+    if (this.loginForm.invalid) {
+      this.errorMessage = "Please fill out all required fields.";
+      return;
+    }
+
+    // Handle login logic here
+    console.log('Login Data:', this.loginForm.value);
+  }
+}
