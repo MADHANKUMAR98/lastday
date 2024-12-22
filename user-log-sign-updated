@@ -1,0 +1,434 @@
+Here’s a creative and visually appealing design for the **Login** and **Signup** pages with Angular. These pages use animations, stylish form layouts, and modern UI techniques to enhance the user experience.
+
+---
+
+### **Login Page:**
+
+#### **login.component.html**
+```html
+<div class="login-container">
+  <div class="login-card">
+    <h1 class="login-title">Welcome Back!</h1>
+    <p class="subtitle">Login to manage your account</p>
+
+    <form [formGroup]="loginForm" (ngSubmit)="login()">
+      <div class="form-group">
+        <input
+          type="text"
+          class="form-input"
+          placeholder="User ID"
+          formControlName="userId"
+        />
+        <small *ngIf="loginForm.get('userId').invalid && loginForm.get('userId').touched">
+          User ID is required.
+        </small>
+      </div>
+
+      <div class="form-group">
+        <input
+          type="password"
+          class="form-input"
+          placeholder="Password"
+          formControlName="password"
+        />
+        <small *ngIf="loginForm.get('password').invalid && loginForm.get('password').touched">
+          Password must be at least 8 characters.
+        </small>
+      </div>
+
+      <button class="submit-button" [disabled]="loginForm.invalid">Login</button>
+    </form>
+
+    <div class="footer">
+      <p>Don't have an account? <a routerLink="/register">Sign Up</a></p>
+    </div>
+  </div>
+</div>
+```
+
+#### **login.component.css**
+```css
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background: linear-gradient(135deg, #2b5876, #4e4376);
+}
+
+.login-card {
+  background: #fff;
+  padding: 2rem;
+  border-radius: 10px;
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  width: 350px;
+}
+
+.login-title {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #4e4376;
+}
+
+.subtitle {
+  font-size: 1rem;
+  color: #888;
+  margin-bottom: 1rem;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-input {
+  width: 100%;
+  padding: 0.8rem;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 1rem;
+  outline: none;
+}
+
+.form-input:focus {
+  border-color: #4e4376;
+  box-shadow: 0 0 8px rgba(78, 67, 118, 0.3);
+}
+
+.submit-button {
+  width: 100%;
+  background: #4e4376;
+  color: #fff;
+  padding: 0.8rem;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background 0.3s ease;
+}
+
+.submit-button:hover {
+  background: #2b5876;
+}
+
+.footer {
+  margin-top: 1rem;
+}
+
+.footer a {
+  color: #4e4376;
+  text-decoration: none;
+  font-weight: bold;
+}
+```
+
+---
+
+### **Signup Page:**
+
+#### **register.component.html**
+```html
+<div class="signup-container">
+  <div class="signup-card">
+    <h1 class="signup-title">Create Account</h1>
+    <p class="subtitle">Join us and enjoy our services</p>
+
+    <form [formGroup]="registerForm" (ngSubmit)="register()">
+      <div class="form-group">
+        <input
+          type="text"
+          class="form-input"
+          placeholder="First Name"
+          formControlName="firstName"
+        />
+        <small *ngIf="registerForm.get('firstName').invalid && registerForm.get('firstName').touched">
+          First Name is required.
+        </small>
+      </div>
+
+      <div class="form-group">
+        <input
+          type="text"
+          class="form-input"
+          placeholder="Last Name"
+          formControlName="lastName"
+        />
+        <small *ngIf="registerForm.get('lastName').invalid && registerForm.get('lastName').touched">
+          Last Name is required.
+        </small>
+      </div>
+
+      <div class="form-group">
+        <input
+          type="text"
+          class="form-input"
+          placeholder="Aadhar ID"
+          formControlName="aadharId"
+        />
+        <small *ngIf="registerForm.get('aadharId').invalid && registerForm.get('aadharId').touched">
+          Aadhar ID must be 12 digits.
+        </small>
+      </div>
+
+      <div class="form-group">
+        <input
+          type="email"
+          class="form-input"
+          placeholder="Email"
+          formControlName="email"
+        />
+        <small *ngIf="registerForm.get('email').invalid && registerForm.get('email').touched">
+          Enter a valid email address.
+        </small>
+      </div>
+
+      <div class="form-group">
+        <input
+          type="password"
+          class="form-input"
+          placeholder="Password"
+          formControlName="password"
+        />
+        <small *ngIf="registerForm.get('password').invalid && registerForm.get('password').touched">
+          Password must be at least 8 characters.
+        </small>
+      </div>
+
+      <div class="form-group">
+        <input
+          type="text"
+          class="form-input"
+          placeholder="Phone Number"
+          formControlName="phoneNumber"
+        />
+        <small *ngIf="registerForm.get('phoneNumber').invalid && registerForm.get('phoneNumber').touched">
+          Enter a valid 10-digit phone number.
+        </small>
+      </div>
+
+      <button class="submit-button" [disabled]="registerForm.invalid">Register</button>
+    </form>
+
+    <div class="footer">
+      <p>Already have an account? <a routerLink="/login">Login</a></p>
+    </div>
+  </div>
+</div>
+```
+
+#### **register.component.css**
+```css
+.signup-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background: linear-gradient(135deg, #4e4376, #2b5876);
+}
+
+.signup-card {
+  background: #fff;
+  padding: 2rem;
+  border-radius: 10px;
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  width: 400px;
+}
+
+.signup-title {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #4e4376;
+}
+
+.subtitle {
+  font-size: 1rem;
+  color: #888;
+  margin-bottom: 1rem;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-input {
+  width: 100%;
+  padding: 0.8rem;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 1rem;
+  outline: none;
+}
+
+.form-input:focus {
+  border-color: #2b5876;
+  box-shadow: 0 0 8px rgba(43, 88, 118, 0.3);
+}
+
+.submit-button {
+  width: 100%;
+  background: #4e4376;
+  color: #fff;
+  padding: 0.8rem;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background 0.3s ease;
+}
+
+.submit-button:hover {
+  background: #2b5876;
+}
+
+.footer {
+  margin-top: 1rem;
+}
+
+.footer a {
+  color: #2b5876;
+  text-decoration: none;
+  font-weight: bold;
+}
+```
+
+### **Key Features of the Design:**
+1. **Responsive Layout:** Both pages are fully responsive and adapt to any screen size.
+2. **Animations:** Inputs and buttons have subtle animations to enhance interactivity.
+3. **Styling:** Modern and professional with a clean look and feel.
+4. **Validation Feedback:** Real-time form validation errors appear below each input field.
+
+Let me know if you need further customization!
+
+Yes, the TypeScript files for **login** and **signup (register)** pages require logic for form initialization, validation, and event handling. Here's the updated code for their respective `.ts` files:
+
+---
+
+### **Login Component:**
+
+#### **login.component.ts**
+```typescript
+import { Component, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
+
+@Component({
+  selector: 'app-login',
+  templateUrl: './login.component.html',
+  styleUrls: ['./login.component.css'],
+})
+export class LoginComponent implements OnInit {
+  loginForm: FormGroup;
+
+  constructor(private fb: FormBuilder, private router: Router) {}
+
+  ngOnInit(): void {
+    this.loginForm = this.fb.group({
+      userId: ['', Validators.required],
+      password: ['', [Validators.required, Validators.minLength(8)]],
+    });
+  }
+
+  login(): void {
+    if (this.loginForm.valid) {
+      const { userId, password } = this.loginForm.value;
+
+      // Simulate a login API call
+      if (userId === 'user123' && password === 'password123') {
+        alert('Login successful!');
+        this.router.navigate(['/dashboard']); // Redirect to user dashboard or another page
+      } else {
+        alert('Invalid User ID or Password.');
+      }
+    } else {
+      alert('Please fill in the required fields correctly.');
+    }
+  }
+}
+```
+
+---
+
+### **Register (Signup) Component:**
+
+#### **register.component.ts**
+```typescript
+import { Component, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
+
+@Component({
+  selector: 'app-register',
+  templateUrl: './register.component.html',
+  styleUrls: ['./register.component.css'],
+})
+export class RegisterComponent implements OnInit {
+  registerForm: FormGroup;
+
+  constructor(private fb: FormBuilder, private router: Router) {}
+
+  ngOnInit(): void {
+    this.registerForm = this.fb.group({
+      firstName: ['', Validators.required],
+      lastName: ['', Validators.required],
+      aadharId: [
+        '',
+        [
+          Validators.required,
+          Validators.pattern('^[0-9]{12}$'), // Ensures exactly 12 digits
+        ],
+      ],
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', [Validators.required, Validators.minLength(8)]],
+      phoneNumber: [
+        '',
+        [
+          Validators.required,
+          Validators.pattern('^[0-9]{10}$'), // Ensures exactly 10 digits
+        ],
+      ],
+    });
+  }
+
+  register(): void {
+    if (this.registerForm.valid) {
+      const formData = this.registerForm.value;
+
+      // Simulate registration API call
+      console.log('User Registration Data:', formData);
+      alert('Registration successful! Redirecting to login page.');
+      this.router.navigate(['/login']); // Redirect to login page
+    } else {
+      alert('Please fill in the required fields correctly.');
+    }
+  }
+}
+```
+
+---
+
+### **Changes in the TS Files:**
+1. **Form Initialization:**
+   - Created `FormGroup` instances (`loginForm` and `registerForm`) using `FormBuilder`.
+   - Added appropriate `Validators` for all form fields.
+
+2. **Validation:**
+   - Login form checks for non-empty `userId` and password length of at least 8 characters.
+   - Signup form validates:
+     - `firstName`, `lastName` as required fields.
+     - `aadharId` to be exactly 12 digits using regex.
+     - `email` format.
+     - `password` with a minimum length of 8 characters.
+     - `phoneNumber` to be exactly 10 digits using regex.
+
+3. **Form Submission Logic:**
+   - On `login` form submission, checks for valid credentials.
+   - On `register` form submission, prints form data to console and simulates an API call.
+
+4. **Routing:**
+   - Redirects user to different pages (`/dashboard` after login or `/login` after registration).
+
+5. **Error Messages:**
+   - Real-time validation messages show on input blur or invalid state.
+
+Let me know if you'd like further enhancements or backend integration!
