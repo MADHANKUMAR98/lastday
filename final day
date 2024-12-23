@@ -1,0 +1,279 @@
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+
+@Override
+public User registerUser(User user) {
+    // Step 1: Initialize BCryptPasswordEncoder
+    BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    
+    // Step 2: Encode the password
+    String encodedPassword = passwordEncoder.encode(user.getPassword());
+    user.setPassword(encodedPassword);
+
+    // Step 3: Extract the last four digits of the Aadhaar ID
+    String lastFourAadhar = user.getAadharId().substring(user.getAadharId().length() - 4);
+
+    // Step 4: Create a custom user ID using the last four digits of the Aadhaar ID
+    String customUserId = lastFourAadhar;
+    user.setUserId(customUserId);
+
+    // Step 5: Save the user in the database
+    return userRepository.save(user);
+}
+
+
+Yes, implementing an `AuthGuard` in your Angular project can help restrict access to certain routes based on user authentication. Below are the steps to set up `AuthGuard`:
+
+---
+
+### **Step 1: Generate AuthGuard**
+Run the following Angular CLI command to generate the guard:
+```bash
+ng generate guard auth
+```
+
+---
+
+### **Step 2: Implement AuthGuard Logic**
+
+Edit the generated `auth.guard.ts` file to include your authentication logic. For example:
+
+#### **`auth.guard.ts`**
+```typescript
+import { Injectable } from '@angular/core';
+import {
+  CanActivate,
+  ActivatedRouteSnapshot,
+  RouterStateSnapshot,
+  Router,
+} from '@angular/router';
+import { AuthService } from './services/auth.service';
+
+@Injectable({
+  providedIn: 'root',
+})
+export class AuthGuard implements CanActivate {
+  constructor(private authService: AuthService, private router: Router) {}
+
+  canActivate(
+    route: ActivatedRouteSnapshot,
+    state: RouterStateSnapshot
+  ): boolean {
+    const isLoggedIn = this.authService.isAuthenticated();
+    if (!isLoggedIn) {
+      this.router.navigate(['/login'], {
+        queryParams: { returnUrl: state.url },
+      });
+      return false;
+    }
+    return true;
+  }
+}
+```
+
+---
+
+### **Step 3: Create an Auth Service**
+The `AuthService` handles authentication state management.
+
+#### **`auth.service.ts`**
+```typescript
+import { Injectable } from '@angular/core';
+
+@Injectable({
+  providedIn: 'root',
+})
+export class AuthService {
+  private loggedIn = false; // Change this based on your login logic
+
+  constructor() {}
+
+  login(username: string, password: string): boolean {
+    // Replace with actual login logic (API call, token storage, etc.)
+    if (username === 'admin' && password === 'password') {
+      this.loggedIn = true;
+      localStorage.setItem('user', JSON.stringify({ username }));
+      return true;
+    }
+    return false;
+  }
+
+  logout(): void {
+    this.loggedIn = false;
+    localStorage.removeItem('user');
+  }
+
+  isAuthenticated(): boolean {
+    return !!localStorage.getItem('user');
+  }
+}
+```
+
+---
+
+### **Step 4: Protect Routes**
+Update your `app-routing.module.ts` to protect certain routes with the `AuthGuard`.
+
+#### **`app-routing.module.ts`**
+```typescript
+import { NgModule } from '@angular/core';
+import { RouterModule, Routes } from '@angular/router';
+import { AdminHomeComponent } from './components/admin-home/admin-home.component';
+import { LoginComponent } from './components/login/login.component';
+import { AuthGuard } from './auth.guard';
+
+const routes: Routes = [
+  { path: '', redirectTo: '/login', pathMatch: 'full' },
+  { path: 'login', component: LoginComponent },
+  { path: 'admin-home', component: AdminHomeComponent, canActivate: [AuthGuard] },
+  { path: '**', redirectTo: '/login' },
+];
+
+@NgModule({
+  imports: [RouterModule.forRoot(routes)],
+  exports: [RouterModule],
+})
+export class AppRoutingModule {}
+```
+
+---
+
+### **Step 5: Login Component**
+The login form validates credentials and redirects to the admin home page on successful login.
+
+#### **`login.component.html`**
+```html
+<div class="login-container">
+  <h2>Login</h2>
+  <form (ngSubmit)="onLogin()" [formGroup]="loginForm">
+    <mat-form-field appearance="outline">
+      <mat-label>Username</mat-label>
+      <input matInput formControlName="username" placeholder="Enter your username" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Password</mat-label>
+      <input matInput type="password" formControlName="password" placeholder="Enter your password" />
+    </mat-form-field>
+
+    <button mat-raised-button color="primary" [disabled]="loginForm.invalid">Login</button>
+    <p *ngIf="errorMessage" class="error">{{ errorMessage }}</p>
+  </form>
+</div>
+```
+
+#### **`login.component.ts`**
+```typescript
+import { Component } from '@angular/core';
+import { Router } from '@angular/router';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { AuthService } from '../services/auth.service';
+
+@Component({
+  selector: 'app-login',
+  templateUrl: './login.component.html',
+  styleUrls: ['./login.component.css'],
+})
+export class LoginComponent {
+  loginForm: FormGroup;
+  errorMessage = '';
+
+  constructor(
+    private fb: FormBuilder,
+    private authService: AuthService,
+    private router: Router
+  ) {
+    this.loginForm = this.fb.group({
+      username: ['', [Validators.required]],
+      password: ['', [Validators.required]],
+    });
+  }
+
+  onLogin(): void {
+    const { username, password } = this.loginForm.value;
+    if (this.authService.login(username, password)) {
+      const returnUrl = this.router.routerState.snapshot.root.queryParams['returnUrl'] || '/admin-home';
+      this.router.navigateByUrl(returnUrl);
+    } else {
+      this.errorMessage = 'Invalid username or password';
+    }
+  }
+}
+```
+
+---
+
+### **Step 6: Add Logout Functionality**
+Add a logout button in the admin home page to allow the admin to log out.
+
+#### **`admin-home.component.html`**
+```html
+<div class="admin-home">
+  <h1>Welcome to Admin Home</h1>
+  <button mat-raised-button color="warn" (click)="logout()">Logout</button>
+</div>
+```
+
+#### **`admin-home.component.ts`**
+```typescript
+import { Component } from '@angular/core';
+import { Router } from '@angular/router';
+import { AuthService } from '../services/auth.service';
+
+@Component({
+  selector: 'app-admin-home',
+  templateUrl: './admin-home.component.html',
+  styleUrls: ['./admin-home.component.css'],
+})
+export class AdminHomeComponent {
+  constructor(private authService: AuthService, private router: Router) {}
+
+  logout(): void {
+    this.authService.logout();
+    this.router.navigate(['/login']);
+  }
+}
+```
+
+---
+
+### **Step 7: Styling**
+Add some basic styles to make the login and admin home pages more visually appealing.
+
+#### **`login.component.css`**
+```css
+.login-container {
+  max-width: 400px;
+  margin: 50px auto;
+  padding: 20px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.error {
+  color: red;
+  margin-top: 10px;
+}
+```
+
+#### **`admin-home.component.css`**
+```css
+.admin-home {
+  text-align: center;
+  padding: 50px;
+}
+
+button {
+  margin-top: 20px;
+}
+```
+
+---
+
+### **Summary**
+1. `AuthGuard` ensures only authenticated users can access certain routes.
+2. `AuthService` manages the authentication logic and state.
+3. The `LoginComponent` provides a login interface.
+4. Routes like `/admin-home` are protected using `AuthGuard`.
+
+This implementation provides secure routing and user authentication. Let me know if you need further customizations!
